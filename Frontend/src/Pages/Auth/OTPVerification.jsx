@@ -1,18 +1,44 @@
-import React, { useState } from "react";
+import React, { useState  , useEffect} from "react";
 import OtpInput from "react-otp-input";
 import Button from "../../Components/Resusable/Button";
+import { useNavigate } from "react-router-dom";
+import { useSelector , useDispatch } from "react-redux";
+import { sendotp , signUp } from "../../Service/Operations/AuthAPI";
 
 const OTPVerification = () => {
   const [otp, setOtp] = useState("");
+  const  {signupData , loading} = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleVerify = () => {
+  useEffect(()=>{
+    if(!signupData){
+      navigate("/register");
+    }
+  } ,[]);
+
+  const handleVerify = (e) => {
+    e.preventDefault();
     console.log("Entered OTP:", otp);
-    // Implement OTP verification logic here
+    const {
+      userName,
+      email,
+      password,
+      confirmPassword,
+    } = signupData;
+    
+    dispatch(signUp(userName,
+      email,
+      password,
+      confirmPassword,otp, navigate))
+      // navigate("/reset-password");
+      navigate("/dashboard")
+
   };
 
   const handleResend = () => {
+    dispatch(sendotp(signupData.email));
     console.log("Resend OTP");
-    // Implement resend logic
   };
 
   return (

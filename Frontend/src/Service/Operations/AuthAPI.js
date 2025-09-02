@@ -1,15 +1,15 @@
-import { authEndpoints } from "../../Service/APIs";
+import { authEndpoints } from "../apis";
 import { apiConnector } from "../apiConnector";
 import { setUser } from "../../Slice/profileSlice";
 import { setLoading, setToken, setSignupData } from "../../Slice/authSlice";
 import toast from "react-hot-toast";
 
 const { 
-  SENDOTP_API, 
+  SEND_OTP_API, 
   SIGNUP_API, 
   LOGIN_API, 
-  FORGET_PASSWORD_API,
-  RESETPASSWORD_API 
+  RESET_PASSWORD_TOKEN_API ,
+  RESET_PASSWORD_API
 } = authEndpoints;
 
 export function sendotp(email, navigate) {
@@ -17,7 +17,7 @@ export function sendotp(email, navigate) {
     const toastBar = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector("POST", SENDOTP_API, { email, checkUserPresent: true });
+      const response = await apiConnector("POST", SEND_OTP_API, { email, checkUserPresent: true });
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -127,7 +127,7 @@ export function forgetPassword(email, navigate) {
 
    
     try {
-      const response = await apiConnector("POST", FORGET_PASSWORD_API, {
+      const response = await apiConnector("POST", RESET_PASSWORD_TOKEN_API, {
         email,
       });
 
@@ -160,7 +160,7 @@ export function resetPassword(password, confirmPassword, token , navigate) {
     }
 
     try {
-     const response = await apiConnector("POST", RESETPASSWORD_API, {
+     const response = await apiConnector("POST", RESET_PASSWORD_API, {
         password,
         confirmPassword,
         resetPasswordToken: token, // ✅ include token here

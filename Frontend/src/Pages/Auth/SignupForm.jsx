@@ -2,29 +2,44 @@ import React, { useState } from "react";
 import InputField from "../../Components/Resusable/InputField";
 import Button from "../../Components/Resusable/Button";
 import { useNavigate } from "react-router-dom";
-
+import { useDispatch } from "react-redux";
+import { setSignupData } from "../../Slice/authSlice";
+import { sendotp } from "../../Service/Operations/AuthAPI";
+import toast from "react-hot-toast";
 const SignupForm = ({ setLoginTypeForm }) => {
   const [formData, setFormData] = useState({
-    name: "",
+    userName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { userName, email, password, confirmPassword } = formData
 
   const onChangeHandler = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
   const submitHandler = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+    if (formData.password !== formData.confirmPassword){
+      toast.error("Passwords Do Not Match");
       return;
     }
-    localStorage.setItem("token", "demo-token");
-    navigate("/dashboard");
+    dispatch(setSignupData(formData));
+     console.log("formData",formData);
+    dispatch(sendotp(formData.email , navigate));
+
+    setFormData({
+      userName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    })
   };
 
   return (
@@ -34,10 +49,10 @@ const SignupForm = ({ setLoginTypeForm }) => {
     >
       <InputField
         label="Name"
-        name="name"
+        name="userName"
         type="text"
         placeholder="Enter your name"
-        value={formData.name}
+        value={formData.userName}
         onChange={onChangeHandler}
         style="h-[40px] w-[435px]"
         required

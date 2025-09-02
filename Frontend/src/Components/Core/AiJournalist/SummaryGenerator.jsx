@@ -5,7 +5,7 @@ import {
   bulletPointSummarizer,
   highlightSummarizer,
   paragraphSummarizer,
-} from "../../../Services/Operations/AiOperation";
+} from "../../../Service/Operations/AiOperation";
 import { toast } from "react-hot-toast";
 import { useDispatch } from "react-redux";
 

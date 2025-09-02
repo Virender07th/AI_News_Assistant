@@ -38,7 +38,8 @@ import BiasDetection from "./Components/Core/AiJournalist/BiasDetection";
 import SummaryGenerator from "./Components/Core/AiJournalist/SummaryGenerator";
 import Translator from "./Components/Core/AiJournalist/Translator";
 import FullNews from "./Components/Resusable/FullNews";
-
+import PrivateRoute from "./Components/Resusable/PrivateRoute";
+import CheckEmailPage from "./Pages/Auth/CheckEmail";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -77,16 +78,17 @@ function App() {
             </OpenRoute>
           }
         />
+
         <Route
-          path="update-password/:id"
+          path="check-email"
           element={
             <OpenRoute>
-              <UpdatePassword />
+              <CheckEmailPage />
             </OpenRoute>
           }
         />
         <Route
-          path="reset-password/:id"
+          path="reset-password/:token"
           element={
             <OpenRoute>
               <ResetPassword />
@@ -95,20 +97,19 @@ function App() {
         />
 
         {/* 🛡️ Protected Routes - With Sidebar */}
-        <Route element={<Dashboard />}>
+        <Route element={<PrivateRoute><Dashboard/></PrivateRoute>}>
           <Route path="dashboard" element={<MainDashBoard />} />
           <Route path="latest" element={<LatestNews />} />
           <Route path="all-news" element={<AllNews />} />
-          <Route path="news" element={<FullNews/>}/>
-      
-        <Route path="ai-journalist" element={<AiJournalistDashboard />} />
+          <Route path="news" element={<FullNews />} />
+          <Route path="ai-journalist" element={<AiJournalistDashboard />} />
           {/* <Route path="news-anchor" element={<AINewsAnchor />} /> */}
-          <Route path="news-fetch" element={<NewsFetchLayout/>} />
-          <Route path="fact-check" element={<FactChecker/>} />
-          <Route path="bias-detection" element={<BiasDetection/>} />
-          <Route path="summary-generation" element={<SummaryGenerator/>} />
-          <Route path="translator" element={<Translator/>} />
-
+          <Route path="news-fetch" element={<NewsFetchLayout />} />
+          <Route path="fact-check" element={<FactChecker />} />
+          <Route path="bias-detection" element={<BiasDetection />} />
+          <Route path="summary-generation" element={<SummaryGenerator />} />
+          <Route path="translator" element={<Translator />} />
+          <Route path="update-password" element={ <UpdatePassword />}/>
           <Route path="profile" element={<Profile />} />
           <Route path="edit-profile" element={<UpdateProfile />} />
         </Route>

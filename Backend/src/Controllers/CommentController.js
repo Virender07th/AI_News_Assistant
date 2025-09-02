@@ -1,32 +1,29 @@
-// Controllers/CommentController.js
+import mongoose from "mongoose";
+import Comment from "../Models/Comment.js";
+import News from "../Models/News.js";
 
-import Comment from "../Models/Comment";
-import News from "../Models/News";
-import generateNewsId from "../Utils/generateNewsID";
-
-// Add a comment to a news article
+// ✅ Add a comment to a news article
 const addComment = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { content, parentCommentId = null, title, source, publishedAt } = req.body;
-    const sourceName = source?.name;
+    const { newsId } = req.params;
+    const { content, parentCommentId = null } = req.body;
 
-    if (!content || !title || !sourceName || !publishedAt) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+    if (!mongoose.Types.ObjectId.isValid(newsId)) {
+      return res.status(400).json({ success: false, message: "Invalid newsId" });
+    }
+    if (!content) {
+      return res.status(400).json({ success: false, message: "Content is required" });
     }
 
-    const newsIdStr = generateNewsId(title, sourceName, publishedAt);
-    let newsDoc = await News.findOne({ newsId: newsIdStr });
+    const newsDoc = await News.findById(newsId);
     if (!newsDoc) {
-      return res.status(404).json({ success: false, message: "News not found, cannot add comment" });
+      return res.status(404).json({ success: false, message: "News not found" });
     }
 
     const comment = await Comment.create({
       userId,
-      newsId: newsDoc._id,
+      newsId,
       content,
       parentCommentId,
     });
@@ -38,14 +35,11 @@ const addComment = async (req, res) => {
     });
   } catch (error) {
     console.error("addComment error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error adding comment",
-    });
+    res.status(500).json({ success: false, message: "Server error adding comment" });
   }
 };
 
-// Update a comment
+// ✅ Update a comment
 const updateComment = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -60,7 +54,6 @@ const updateComment = async (req, res) => {
     if (!comment) {
       return res.status(404).json({ success: false, message: "Comment not found" });
     }
-
     if (comment.userId.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
@@ -75,7 +68,7 @@ const updateComment = async (req, res) => {
   }
 };
 
-// Delete a comment (and its replies)
+// ✅ Delete a comment (and its replies)
 const deleteComment = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -85,7 +78,6 @@ const deleteComment = async (req, res) => {
     if (!comment) {
       return res.status(404).json({ success: false, message: "Comment not found" });
     }
-
     if (comment.userId.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: "Unauthorized to delete this comment" });
     }
@@ -93,24 +85,30 @@ const deleteComment = async (req, res) => {
     await Comment.findByIdAndDelete(commentId);
     await Comment.deleteMany({ parentCommentId: commentId });
 
-    res.status(200).json({ success: true, message: "Comment deleted" });
+    res.status(200).json({ success: true, message: "Comment and replies deleted" });
   } catch (error) {
     console.error("deleteComment error:", error);
     res.status(500).json({ success: false, message: "Server error deleting comment" });
   }
 };
 
-// Get all top-level comments for a news article (with nested replies)
+// ✅ Get all top-level comments + replies for a news article
 const getCommentsByNewsId = async (req, res) => {
   try {
     const { newsId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(newsId)) {
+      return res.status(400).json({ success: false, message: "Invalid newsId" });
+    }
+
     const comments = await Comment.find({ newsId, parentCommentId: null })
       .sort({ createdAt: -1 })
-      .populate("userId", "name")
+      .populate("userId", "name email")
       .lean();
 
-    const replies = await Comment.find({ newsId, parentCommentId: { $ne: null } }).lean();
+    const replies = await Comment.find({ newsId, parentCommentId: { $ne: null } })
+      .populate("userId", "name email")
+      .lean();
 
     const commentMap = {};
     comments.forEach(comment => {
@@ -132,22 +130,15 @@ const getCommentsByNewsId = async (req, res) => {
   }
 };
 
-// Reply to an existing comment
+// ✅ Reply to a comment
 const replyToComment = async (req, res) => {
   try {
     const userId = req.user._id;
     const { parentCommentId } = req.params;
-    const { content, title, source, publishedAt } = req.body;
-    const sourceName = source?.name;
+    const { content, newsId } = req.body;
 
-    if (!content || !title || !sourceName || !publishedAt) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
-    }
-
-    const newsIdStr = generateNewsId(title, sourceName, publishedAt);
-    const newsDoc = await News.findOne({ newsId: newsIdStr });
-    if (!newsDoc) {
-      return res.status(404).json({ success: false, message: "News not found, cannot add reply" });
+    if (!content || !mongoose.Types.ObjectId.isValid(newsId)) {
+      return res.status(400).json({ success: false, message: "Missing or invalid fields" });
     }
 
     const parentComment = await Comment.findById(parentCommentId);
@@ -157,7 +148,7 @@ const replyToComment = async (req, res) => {
 
     const reply = await Comment.create({
       userId,
-      newsId: newsDoc._id,
+      newsId,
       content,
       parentCommentId,
     });
@@ -169,7 +160,7 @@ const replyToComment = async (req, res) => {
   }
 };
 
-// Get all comments by a user
+// ✅ Get all comments by user
 const getAllCommentsByUser = async (req, res) => {
   try {
     const userId = req.user._id;

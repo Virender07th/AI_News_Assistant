@@ -1,22 +1,28 @@
 import React, { useState } from "react";
 import InputField from "../../Components/Resusable/InputField";
 import Button from "../../Components/Resusable/Button";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { resetPassword } from "../../Service/Operations/AuthAPI";
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
-    newPassword: "",
+    password: "",
     confirmPassword: "",
   });
 
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const onChangeHandler = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  const { token } = useParams(); 
 
-  const submitHandler = (e) => {
+
+   const submitHandler = (e) => {
     e.preventDefault();
-    console.log("Reset password with:", formData);
-    // ✅ Add password reset logic here
+    dispatch(resetPassword(formData.password, formData.confirmPassword, token, navigate));
   };
   return (
     <div className="flex items-center justify-center  px-4">
@@ -32,7 +38,7 @@ const ResetPassword = () => {
           >
             <InputField
               placeholder={"New Password"}
-              name="newPassword"
+              name="password"
               type="password"
               onChange={onChangeHandler}
               value={formData.newPassword}
@@ -49,13 +55,13 @@ const ResetPassword = () => {
               required
             />
             <Button
-              date={formData.newPassword &&
+              date={formData.password &&
                 formData.confirmPassword &&
-                formData.newPassword === formData.confirmPassword}
+                formData.password === formData.confirmPassword}
               condition={
-                formData.newPassword &&
+                formData.password &&
                 formData.confirmPassword &&
-                formData.newPassword === formData.confirmPassword
+                formData.password === formData.confirmPassword
               }
               content={"Reset password"}
               

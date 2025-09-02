@@ -1,8 +1,10 @@
 import { apiConnector } from "../apiConnector";
 import { setUser, setLoading } from "../../Slice/profileSlice";
-import { profileEndpoints } from "../../Service/APIs";
+import { profileEndpoints  , dashboardEndpoints} from "../apis";
 import { logout } from "./AuthAPI";
 import toast from "react-hot-toast";
+import { setUserActivity, setUserStats } from "../../Slice/dashboardSlice";
+
 
 const {
   GET_USER_DETAILS_API,
@@ -11,7 +13,51 @@ const {
   CHANGE_PASSWORD_API,
   DELETE_PROFILE_API,
 } = profileEndpoints;
+const {
+  GET_USER_ACTIVITY_API,
+  GET_USER_STATS_API,
+} = dashboardEndpoints
 
+
+export const fetchUserActivity = (token) => async (dispatch) => {
+  dispatch(setLoading(true));
+  const toastId = toast.loading("Loading activities...");
+  try {
+    const response = await apiConnector("GET", GET_USER_ACTIVITY_API, null, {
+      Authorization: `Bearer ${token}`,
+    });
+    if (!response.data.success) throw new Error(response.data.message);
+    dispatch(setUserActivity(response.data.activities ));
+    console.log( "activites",response.data.activities);
+    
+  } catch (err) {
+    console.error(err);
+    toast.error(err?.response?.data?.message || err.message || "Failed to fetch activities");
+  } finally {
+    dispatch(setLoading(false));
+    toast.dismiss(toastId);
+  }
+};
+
+export const fetchUserStats = (token) => async (dispatch) => {
+  dispatch(setLoading(true));
+  const toastId = toast.loading("Loading stats...");
+  try {
+    const response = await apiConnector("GET", GET_USER_STATS_API, null, {
+      Authorization: `Bearer ${token}`,
+    });
+    if (!response.data.success) throw new Error(response.data.message);
+    dispatch(setUserStats(response.data.stats));
+    console.log("stats" , response.data.stats);
+    
+  } catch (err) {
+    console.error(err);
+    toast.error(err?.response?.data?.message || err.message || "Failed to fetch stats");
+  } finally {
+    dispatch(setLoading(false));
+    toast.dismiss(toastId);
+  }
+};
 // Fetch user profile
 export function getUserProfileDetaile(token) {
   return async (dispatch) => {
@@ -37,6 +83,8 @@ export function getUserProfileDetaile(token) {
       };
 
       dispatch(setUser(mappedUser));
+      console.log("user" , mappedUser);
+      
       localStorage.setItem("user", JSON.stringify(mappedUser));
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -160,3 +208,4 @@ export function deleteProfile(token, navigate) {
     }
   };
 }
+

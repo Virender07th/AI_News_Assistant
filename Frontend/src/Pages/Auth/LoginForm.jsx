@@ -2,22 +2,29 @@ import React, { useState } from "react";
 import InputField from "../../Components/Resusable/InputField";
 import Button from "../../Components/Resusable/Button";
 import { useNavigate } from "react-router-dom";
+import {login} from "../../Service/Operations/AuthAPI"
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 
 const LoginForm = ({ setLoginTypeForm }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const onChangeHandler = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const submitHandler = (e) => {
+   const submitHandler = (e) => {
     e.preventDefault();
-    localStorage.setItem("token", "demo-token");
-    navigate("/dashboard");
+    dispatch(login( formData.email , formData.password , navigate ));
+    setFormData({
+      email :"",
+      password:"",
+    })
+    
   };
-
   return (
     <form
       onSubmit={submitHandler}

@@ -4,6 +4,8 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Bell, ChevronDown, LogOut, User } from "lucide-react";
 import avatar from "../../assets/bg1.jpg";
 import ConfirmationModal from "../Resusable/ConfirmationModal";
+import { useDispatch } from "react-redux";
+import { logout } from "../../Service/Operations/AuthAPI";
 
 export const headerData = [
   {
@@ -33,11 +35,10 @@ const Header = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch()
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.clear();
-    navigate("/");
+    dispatch(logout(navigate));
   };
 
   const toggleProfileDropdown = () => {

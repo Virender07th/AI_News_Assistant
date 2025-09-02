@@ -1,23 +1,32 @@
 import React, { useState } from "react";
 import InputField from "../../Components/Resusable/InputField";
 import Button from "../../Components/Resusable/Button";
+import { useDispatch , useSelector} from "react-redux";
+import { changePassword } from "../../Service/Operations/ProfileAPI";
 
 const UpdatePassword = () => {
   const [formData, setFormData] = useState({
-    currentPassword:"",
+    password: "",
     newPassword: "",
     confirmPassword: "",
   });
+  const dispatch = useDispatch();
 
   const onChangeHandler = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const { password, newPassword, confirmPassword } = formData;
+
+  const { token } = useSelector((state) => state.auth);
+
   const submitHandler = (e) => {
     e.preventDefault();
-    console.log("Reset password with:", formData);
-    // ✅ Add password reset logic here
+    console.log("Update password with:", formData);
+    dispatch(changePassword(token, formData));
+
+    onClose(); // Close modal after update
   };
   return (
     <div className="flex items-center justify-center  px-4">
@@ -33,19 +42,10 @@ const UpdatePassword = () => {
           >
             <InputField
               placeholder={"Current Password"}
-              name="currentPassword"
+              name="password"
               type="password"
               onChange={onChangeHandler}
-              value={formData.currentPassword}
-              style={`h-[40px] w-[435px]`}
-              required
-            />
-            <InputField
-              placeholder={"New Password"}
-              name="newPassword"
-              type="password"
-              onChange={onChangeHandler}
-              value={formData.newPassword}
+              value={formData.password}
               style={`h-[40px] w-[435px]`}
               required
             />
@@ -68,16 +68,19 @@ const UpdatePassword = () => {
               required
             />
             <Button
-              date={formData.newPassword &&
+              date={
+                formData.password &&
+                formData.newPassword &&
                 formData.confirmPassword &&
-                formData.newPassword === formData.confirmPassword}
+                formData.newPassword === formData.confirmPassword
+              }
               condition={
+                formData.password &&
                 formData.newPassword &&
                 formData.confirmPassword &&
                 formData.newPassword === formData.confirmPassword
               }
               content={"Reset password"}
-              
             />
           </form>
         </div>

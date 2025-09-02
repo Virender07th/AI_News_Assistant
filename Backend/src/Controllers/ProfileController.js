@@ -1,16 +1,18 @@
+import mongoose from "mongoose";
 import Profile from "../Models/Profile.js";
 import uploadImageToCloudinary from "../Utils/imageUploader.js";
-import User from "../Models/User.js"
+import User from "../Models/User.js";
 
-// UserProfile controller
-
+//
+// --- Get User Profile ---
+//
 const getUserProfile = async (req, res) => {
   try {
     const userId = req.user._id;
 
     const profile = await User.findById(userId)
-  .select("-password -token -resetPasswordToken -resetPasswordExpires")
-  .populate("additionalDetails");
+      .select("-password -token -resetPasswordToken -resetPasswordExpires")
+      .populate("additionalDetails");
 
     if (!profile) {
       return res.status(404).json({
@@ -32,7 +34,10 @@ const getUserProfile = async (req, res) => {
   }
 };
 
- const updateDisplayPicture = async (req, res) => {
+//
+// --- Update Display Picture ---
+//
+const updateDisplayPicture = async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -46,7 +51,7 @@ const getUserProfile = async (req, res) => {
     // Upload image to Cloudinary
     const uploadResult = await uploadImageToCloudinary(
       req.file.path,
-      process.env.FOLDER_NAME, // cloudinary folder
+      process.env.FOLDER_NAME,
       300,
       "auto"
     );
@@ -79,26 +84,46 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+//
+// --- Update User Profile ---
+//
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { bio, location, gender, contactNumber } = req.body;
+    const { bio, location, gender, contactNumber, interests } = req.body;
 
-    // Check if at least one field is provided
-    if (!bio || !location || !contactNumber || !gender) {
-      return sendError(res, 400, "No data provided to update");
+    // If no fields provided
+    if (!bio && !location && !gender && !contactNumber && !interests) {
+      return res.status(400).json({
+        success: false,
+        message: "No data provided to update",
+      });
     }
 
     const updateData = {};
+
     if (bio !== undefined) updateData.bio = bio;
     if (location !== undefined) updateData.location = location;
     if (contactNumber !== undefined) updateData.contactNumber = contactNumber;
+
     if (gender !== undefined) {
       const allowedGenders = ["Male", "Female", "Other Gender"];
       if (!allowedGenders.includes(gender)) {
-        return res.status(400).json({ success: false, message: "Invalid gender value" });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid gender value",
+        });
       }
       updateData.gender = gender;
+    }
+    if (interests !== undefined) {
+      if (!Array.isArray(interests)) {
+        return res.status(400).json({
+          success: false,
+          message: "Interests must be an array of strings",
+        });
+      }
+      updateData.interests = interests;
     }
 
     // Update or create profile
@@ -109,7 +134,7 @@ const updateUserProfile = async (req, res) => {
     );
 
     // Fetch user with populated profile
-    const user = await User.findById(userId).populate("additionalDetails");
+    const user = await User.findById(userId).select("-password -token -resetPasswordToken -resetPasswordExpires").populate("additionalDetails");
 
     res.status(200).json({
       success: true,
@@ -118,11 +143,16 @@ const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("updateUserProfile error:", error);
-    res.status(500).json({ success: false, message: "Server error updating profile" });
+    res.status(500).json({
+      success: false,
+      message: "Server error updating profile",
+    });
   }
 };
 
-
+//
+// --- Delete User Profile ---
+//
 const deleteUserProfile = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -130,10 +160,16 @@ const deleteUserProfile = async (req, res) => {
     const userId = req.user._id;
 
     // Delete profile
-    const deletedProfile = await Profile.findOneAndDelete({ user: userId }, { session });
-    
+    const deletedProfile = await Profile.findOneAndDelete(
+      { userId },
+      { session }
+    );
+
     // Delete user
-    const deletedUser = await User.findOneAndDelete({ _id: userId }, { session });
+    const deletedUser = await User.findOneAndDelete(
+      { _id: userId },
+      { session }
+    );
 
     if (!deletedProfile || !deletedUser) {
       await session.abortTransaction();
@@ -163,7 +199,6 @@ const deleteUserProfile = async (req, res) => {
     });
   }
 };
-
 
 export {
   getUserProfile,

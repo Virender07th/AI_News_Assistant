@@ -1,10 +1,13 @@
 import axios from "axios";
 
 const BASE_URL = "http://localhost:8000/api/v1";
+// const BASE_URL = "https://ai-all-docx-project-77.onrender.com/api/v1";
+
 
 export const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 20000,
+  timeout: 60000,
+   withCredentials: true, 
 });
 
 // Request interceptor to attach token

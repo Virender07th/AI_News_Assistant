@@ -1,8 +1,8 @@
 // Controllers/SavedNewsController.js
 
-import SavedNews from "../Models/SavedNews";
-import News from "../Models/News";
-import generateNewsId from "../Utils/generateNewsID";
+import SavedNews from "../Models/SavedNews.js";
+import News from "../Models/News.js";
+import generateNewsId from "../Utils/generateNewsID.js";
 
 // Save a news article
 const saveNews = async (req, res) => {

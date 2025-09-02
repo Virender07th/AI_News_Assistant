@@ -16,31 +16,54 @@ cloudinaryConnect();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+// --- CORS CONFIG ---
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  // "https://ai-all-docx-project.vercel.app" // Vercel frontend
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow Postman / curl
+
+      // allow if origin matches one of allowedOrigins (ignores trailing slash / subpaths)
+      if (allowedOrigins.some((o) => origin.startsWith(o))) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS not allowed: " + origin));
+    },
     credentials: true,
   })
 );
+
+// handle preflight (important for credentials:true)
+app.options("*", cors());
+
+// passport init
+app.use(passport.initialize());
 
 
 
 //routes
 import userRoutes from "./Routes/AuthRoutes.js"
 import profileRoutes from "./Routes/ProfileRoutes.js"
+import dashboardRoute from "./Routes/DashboardRoutes.js"
 import newsRoutes from "./Routes/NewsRoutes.js"
-// import likeRoutes from "./Routes/LikeRoutes.js"
-// import commentRoutes from "./Routes/CommentRoutes.js"
-// import savedRoutes from "./Routes/SavedRoutes.js"
+import likeRoutes from "./Routes/LikeRoutes.js"
+import commentRoutes from "./Routes/CommentRoutes.js"
+import savedRoutes from "./Routes/SavedRoutes.js"
 import aiFeatures from "./Routes/AIRoutes.js"
 
 
 app.use('/api/v1/auth', userRoutes);
 app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/dashboard' , dashboardRoute)
 app.use('/api/v1/news', newsRoutes);
-// app.use('/api/v1/likes', likeRoutes);
-// app.use('/api/v1/comments', commentRoutes);
-// app.use('/api/v1/saved', savedRoutes);
+app.use('/api/v1/likes', likeRoutes);
+app.use('/api/v1/comments', commentRoutes);
+app.use('/api/v1/saved', savedRoutes);
 app.use("/api/v1/ai" , aiFeatures )
 
 //def route
@@ -52,15 +75,13 @@ app.get("/", (req, res) => {
 });
 
 // Ports 
-const PORT = process.env.PORT || 8001;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-	console.log(`App is running at ${PORT}`)
-})
+  console.log(`🚀 App is running at http://localhost:${PORT}`);}
+)
 
 
 
-
-// ✅ add passport
 
 
 

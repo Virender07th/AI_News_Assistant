@@ -1,15 +1,28 @@
-import React, { useState } from "react";
+import React, { useState ,  useEffect } from "react";
 import LoginImage from "../../assets/LoginImage.png";
+import { ArrowRight, Users } from "lucide-react";
 import SignupForm from "./SignupForm";
 import LoginForm from "./LoginForm";
 import Button from "../../Components/Resusable/Button";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
 
 const Register = () => {
-  const [loginTypeForm, setLoginTypeForm] = useState(false);
-  const navigate = useNavigate()
+   const [loginTypeForm, setLoginTypeForm] = useState(false);
+  const navigate = useNavigate();
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+
+  if (token) {
+    localStorage.setItem("token", token); // save token
+    toast.success("Login successful");
+    navigate("/dashboard"); // now PrivateRoute will allow access
+  }
+}, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4  sm:px-4">
@@ -42,47 +55,44 @@ const Register = () => {
             </div>
 
             {/* Social Buttons */}
-            <div className="flex flex-col  gap-4 justify-center items-center w-full max-w-[435px]">
-              <Button
-                icon={FcGoogle}
-                color={false}
-                content="Continue with Google"
-                style=" max-w-[250px] w-[210px] sm:w-full"
-                data={true}
-                condition={true}
-              />
-              <Button
-                icon={FaFacebook}
-                color={true}
-                content="Continue with Facebook"
-                data={true}
-                condition={true}
-                style="max-w-[250px] sm:w-full"
-              />
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+              <a
+                href="http://localhost:8000/api/v1/auth/google"
+                className="flex-1 flex items-center justify-center gap-3 h-12 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors duration-300 bg-white text-gray-700 font-medium text-sm"
+              >
+                <FcGoogle className="w-5 h-5" />
+                Google
+              </a>
+
+              <a
+                href="http://localhost:8000/api/v1/auth/facebook"
+                className="flex-1 flex items-center justify-center gap-3 h-12 bg-[#1877F2] hover:bg-[#166FE5] rounded-xl transition-colors duration-300 text-white font-medium text-sm shadow-sm hover:shadow-md"
+              >
+                <FaFacebook className="w-5 h-5" />
+                Facebook
+              </a>
             </div>
 
             {/* Footer Links */}
-            <div className="text-center text-sm text-gray-600 mt-4 w-full max-w-[435px] space-y-1">
-              <p>
-                Forgot your password?{" "}
-                <button
-                  className="text-blue-600 font-medium hover:underline"
-                  onClick={() => navigate("/forget-password") }
-                >
-                  Reset here
-                </button>
-              </p>
-              <p>
+           <div className="text-center w-full max-w-md pt-4">
+              <div className="text-sm text-gray-600 mb-2">
                 {loginTypeForm
                   ? "Already have an account?"
-                  : "Don't have an account?"}{" "}
+                  : "Don't have an account?"}
                 <button
-                  className="text-blue-600 font-medium hover:underline"
                   onClick={() => setLoginTypeForm(!loginTypeForm)}
+                  className="ml-1 text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200 inline-flex items-center gap-1"
                 >
-                  {loginTypeForm ? "Login" : "Sign Up"}
+                  {loginTypeForm ? "Sign In" : "Sign Up"}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
-              </p>
+              </div>
+              <button
+                onClick={() => navigate("/forgot-password")}
+                className="text-sm text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-colors duration-200"
+              >
+                Forgot your password?
+              </button>
             </div>
           </div>
 
