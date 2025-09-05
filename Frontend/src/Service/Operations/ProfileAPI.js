@@ -1,23 +1,18 @@
 import { apiConnector } from "../apiConnector";
 import { setUser, setLoading } from "../../Slice/profileSlice";
-import { profileEndpoints  , dashboardEndpoints} from "../apis";
+import { profileEndpoints, dashboardEndpoints } from "../apis";
 import { logout } from "./AuthAPI";
 import toast from "react-hot-toast";
 import { setUserActivity, setUserStats } from "../../Slice/dashboardSlice";
 
-
 const {
-  GET_USER_DETAILS_API,
+  GET_USER_PROFILE_API,
+  UPDATE_USER_PROFILE_API,
   UPDATE_DISPLAY_PICTURE_API,
-  UPDATE_PROFILE_API,
   CHANGE_PASSWORD_API,
-  DELETE_PROFILE_API,
+  DELETE_USER_PROFILE_API,
 } = profileEndpoints;
-const {
-  GET_USER_ACTIVITY_API,
-  GET_USER_STATS_API,
-} = dashboardEndpoints
-
+const { GET_USER_ACTIVITY_API, GET_USER_STATS_API } = dashboardEndpoints;
 
 export const fetchUserActivity = (token) => async (dispatch) => {
   dispatch(setLoading(true));
@@ -27,12 +22,15 @@ export const fetchUserActivity = (token) => async (dispatch) => {
       Authorization: `Bearer ${token}`,
     });
     if (!response.data.success) throw new Error(response.data.message);
-    dispatch(setUserActivity(response.data.activities ));
-    console.log( "activites",response.data.activities);
-    
+    dispatch(setUserActivity(response.data.activities));
+    console.log("activites", response.data.activities);
   } catch (err) {
     console.error(err);
-    toast.error(err?.response?.data?.message || err.message || "Failed to fetch activities");
+    toast.error(
+      err?.response?.data?.message ||
+        err.message ||
+        "Failed to fetch activities"
+    );
   } finally {
     dispatch(setLoading(false));
     toast.dismiss(toastId);
@@ -48,11 +46,12 @@ export const fetchUserStats = (token) => async (dispatch) => {
     });
     if (!response.data.success) throw new Error(response.data.message);
     dispatch(setUserStats(response.data.stats));
-    console.log("stats" , response.data.stats);
-    
+    console.log("stats", response.data.stats);
   } catch (err) {
     console.error(err);
-    toast.error(err?.response?.data?.message || err.message || "Failed to fetch stats");
+    toast.error(
+      err?.response?.data?.message || err.message || "Failed to fetch stats"
+    );
   } finally {
     dispatch(setLoading(false));
     toast.dismiss(toastId);
@@ -65,7 +64,7 @@ export function getUserProfileDetaile(token) {
     dispatch(setLoading(true));
 
     try {
-      const response = await apiConnector("GET", GET_USER_DETAILS_API , {
+      const response = await apiConnector("GET", GET_USER_PROFILE_API, {
         Authorization: `Bearer ${token}`,
       });
 
@@ -75,20 +74,23 @@ export function getUserProfileDetaile(token) {
 
       const mappedUser = {
         ...apiUser,
-        image: apiUser.additionalDetails?.imageUrl || "",
+        imageUrl: apiUser.additionalDetails?.imageUrl || "",
         contactNumber: apiUser.additionalDetails?.contactNumber || "",
         bio: apiUser.additionalDetails?.bio || "",
         location: apiUser.additionalDetails?.location || "",
         gender: apiUser.additionalDetails?.gender || "",
+        interests: apiUser.additionalDetails?.interests || [], // <-- add this
       };
 
       dispatch(setUser(mappedUser));
-      console.log("user" , mappedUser);
-      
+      console.log("user", mappedUser);
+
       localStorage.setItem("user", JSON.stringify(mappedUser));
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      toast.error(error?.response?.data?.message || "Failed to fetch user profile");
+      toast.error(
+        error?.response?.data?.message || "Failed to fetch user profile"
+      );
     } finally {
       dispatch(setLoading(false));
       toast.dismiss(toastId);
@@ -96,10 +98,8 @@ export function getUserProfileDetaile(token) {
   };
 }
 
-
-
 // Update display picture
-export function updateDisplayPicture(token, file ) {
+export function updateDisplayPicture(token, file) {
   return async (dispatch) => {
     const toastId = toast.loading("Uploading...");
     try {
@@ -129,10 +129,11 @@ export function updateDisplayPicture(token, file ) {
       localStorage.setItem("user", JSON.stringify(userObj));
 
       toast.success("Display Picture Updated Successfully");
-      
     } catch (error) {
       console.error("Error updating display picture:", error);
-      toast.error(error?.response?.data?.message || "Could not update display picture");
+      toast.error(
+        error?.response?.data?.message || "Could not update display picture"
+      );
     } finally {
       toast.dismiss(toastId);
     }
@@ -140,23 +141,30 @@ export function updateDisplayPicture(token, file ) {
 }
 
 // Update profile info
-export function updateProfile(token, formData ) {
+export function updateProfile(token, formData) {
   return async (dispatch) => {
     const toastId = toast.loading("Saving changes...");
     try {
-      const response = await apiConnector("PUT", UPDATE_PROFILE_API, formData, {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      });
+      const response = await apiConnector(
+        "PUT",
+        UPDATE_USER_PROFILE_API,
+        formData,
+        {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        }
+      );
 
       if (!response.data.success) throw new Error(response.data.message);
 
       const updatedUser = response.data.data;
-      const userImage = updatedUser.image || updatedUser.imageUrl || `https://api.dicebear.com/5.x/initials/svg?seed=${updatedUser.userName}`;
+      const userImage =
+        updatedUser.image ||
+        updatedUser.imageUrl ||
+        `https://api.dicebear.com/5.x/initials/svg?seed=${updatedUser.userName}`;
 
       dispatch(setUser({ ...updatedUser, image: userImage }));
       toast.success("Profile Updated Successfully");
-      
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error(error?.response?.data?.message || "Could not update profile");
@@ -171,16 +179,23 @@ export function changePassword(token, formData) {
   return async (dispatch) => {
     const toastId = toast.loading("Changing password...");
     try {
-      const response = await apiConnector("POST", CHANGE_PASSWORD_API, formData, {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      });
+      const response = await apiConnector(
+        "POST",
+        CHANGE_PASSWORD_API,
+        formData,
+        {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        }
+      );
 
       if (!response.data.success) throw new Error(response.data.message);
       toast.success("Password Changed Successfully");
     } catch (error) {
       console.error("Error changing password:", error);
-      toast.error(error?.response?.data?.message || "Could not change password");
+      toast.error(
+        error?.response?.data?.message || "Could not change password"
+      );
     } finally {
       toast.dismiss(toastId);
     }
@@ -192,9 +207,14 @@ export function deleteProfile(token, navigate) {
   return async (dispatch) => {
     const toastId = toast.loading("Deleting profile...");
     try {
-      const response = await apiConnector("DELETE", DELETE_PROFILE_API, null, {
-        Authorization: `Bearer ${token}`,
-      });
+      const response = await apiConnector(
+        "DELETE",
+        DELETE_USER_PROFILE_API,
+        null,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
 
       if (!response.data.success) throw new Error(response.data.message);
 
@@ -208,4 +228,3 @@ export function deleteProfile(token, navigate) {
     }
   };
 }
-

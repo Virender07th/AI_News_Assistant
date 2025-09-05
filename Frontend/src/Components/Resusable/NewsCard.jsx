@@ -1,19 +1,13 @@
-// NewsCard.jsx - Enhanced version
-import React, { useState } from 'react';
-import Button from './Button';
-import {
-  IoChatbubbleOutline,
-  IoHeartOutline,
-} from 'react-icons/io5';
-import {
-  MdBookmarkBorder,
-  MdBookmark,
-} from 'react-icons/md';
-import { FcLike } from 'react-icons/fc';
-import { PiShareFatLight } from 'react-icons/pi';
-import { Clock, User, Building } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import Button from "./Button";
+import { IoChatbubbleOutline, IoHeartOutline } from "react-icons/io5";
+import { MdBookmarkBorder, MdBookmark } from "react-icons/md";
+import { FcLike } from "react-icons/fc";
+import { PiShareFatLight } from "react-icons/pi";
+import { User, Building } from "lucide-react";
+import { TimerIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const NewsCard = ({
   heading,
@@ -22,6 +16,8 @@ const NewsCard = ({
   category,
   author,
   publisher,
+  date,
+  url,
   btns = false,
 }) => {
   const [liked, setLiked] = useState(false);
@@ -29,16 +25,17 @@ const NewsCard = ({
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(30);
   const [commentsCount] = useState(20);
+  const [expanded, setExpanded] = useState(false); // ✅ new state
   const navigate = useNavigate();
 
   const handleLike = () => {
     setLiked(!liked);
-    setLikesCount(prev => prev + (liked ? -1 : 1));
+    setLikesCount((prev) => prev + (liked ? -1 : 1));
   };
 
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
-    setBookmarkCount(prev => prev + (bookmarked ? -1 : 1));
+    setBookmarkCount((prev) => prev + (bookmarked ? -1 : 1));
   };
 
   const handleShare = () => {
@@ -60,23 +57,22 @@ const NewsCard = ({
 
   const getCategoryColor = (cat) => {
     const colors = {
-      'AI': 'bg-blue-500 text-white',
-      'Space': 'bg-purple-500 text-white',
-      'Cybersecurity': 'bg-red-500 text-white',
-      'Healthcare': 'bg-green-500 text-white',
-      'Finance': 'bg-yellow-500 text-white',
-      'Technology': 'bg-indigo-500 text-white',
-      'Politics': 'bg-gray-500 text-white',
-      'Sports': 'bg-orange-500 text-white',
+      AI: "bg-blue-500 text-white",
+      Space: "bg-purple-500 text-white",
+      Cybersecurity: "bg-red-500 text-white",
+      Healthcare: "bg-green-500 text-white",
+      Finance: "bg-yellow-500 text-white",
+      Technology: "bg-indigo-500 text-white",
+      Politics: "bg-gray-500 text-white",
+      Sports: "bg-orange-500 text-white",
     };
-    return colors[cat] || 'bg-gray-500 text-white';
+    return colors[cat] || "bg-gray-500 text-white";
   };
 
   return (
     <article className="group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-500 hover:-translate-y-2">
-      {/* Gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      
+
       <div className="relative p-6 lg:p-8">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Image Section */}
@@ -84,14 +80,14 @@ const NewsCard = ({
             <img
               src={image}
               alt={`News: ${heading}`}
-              className="w-full h-64 lg:h-72 object-cover group-hover:scale-110 transition-transform duration-700"
+              className="w-full h-48 lg:h-72 object-cover group-hover:scale-110 transition-transform duration-700"
             />
-            {/* Image overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            {/* Category Badge on Image */}
             {category && (
-              <div className={`absolute top-4 left-4 px-3 py-1 text-xs font-bold rounded-full shadow-lg ${getCategoryColor(category)}`}>
+              <div
+                className={`absolute top-4 left-4 px-3 py-1 text-xs font-bold rounded-full shadow-lg ${getCategoryColor(
+                  category
+                )}`}
+              >
                 {category}
               </div>
             )}
@@ -99,14 +95,11 @@ const NewsCard = ({
 
           {/* Content Section */}
           <div className="lg:w-1/2 w-full flex flex-col justify-between space-y-4">
-            {/* Header Content */}
             <div className="space-y-4">
-              {/* Title */}
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight group-hover:text-blue-700 transition-colors duration-300">
+              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 leading-tight group-hover:text-blue-700 transition-colors duration-300">
                 {heading}
               </h2>
 
-              {/* Meta Information */}
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                 {author && (
                   <div className="flex items-center gap-1">
@@ -120,38 +113,60 @@ const NewsCard = ({
                     <span>{publisher}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1">
-                  <Clock size={16} />
-                  <span>2 hours ago</span>
-                </div>
+                {date && (
+                  <div className="flex items-center gap-1">
+                    <TimerIcon size={16} />
+                    <span>{date}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Description */}
-              <p className="text-gray-600 leading-relaxed line-clamp-3 lg:line-clamp-4">
-                {description}
+              {/* ✅ Read More Toggle */}
+              <p className="text-gray-600 leading-relaxed">
+                {description
+                  ? expanded
+                    ? description
+                    : description.length > 150
+                    ? description.slice(0, 150) + "..."
+                    : description
+                  : "No description available."}
               </p>
+
+              {description && description.length > 150 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-blue-600 text-sm font-medium hover:underline"
+                >
+                  {expanded ? "Show less" : "Read more"}
+                </button>
+              )}
             </div>
 
-            {/* Actions Section */}
             <div className="space-y-4">
-              {/* Read More Button */}
               <Button
                 content="Read Full Article"
-                data={true}
-                condition={true}
-                color={false}
-                click={() => navigate("/news")}
+                click={() =>
+                  navigate("/news", {
+                    state: {
+                      heading,
+                      description,
+                      image,
+                      category,
+                      author,
+                      publisher,
+                      date,
+                      url,
+                    },
+                  })
+                }
               />
 
-              {/* Social Actions */}
               {btns && (
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-6">
-                    {/* Like */}
                     <button
                       onClick={handleLike}
                       className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-all duration-200 active:scale-95"
-                      title="Like this article"
                     >
                       {liked ? (
                         <FcLike size={20} className="animate-pulse" />
@@ -160,39 +175,37 @@ const NewsCard = ({
                       )}
                       <span className="text-sm font-medium">{likesCount}</span>
                     </button>
-
-                    {/* Comments */}
-                    <button
-                      className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-all duration-200 active:scale-95"
-                      title="View comments"
-                    >
+                    <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-all duration-200 active:scale-95">
                       <IoChatbubbleOutline size={20} />
-                      <span className="text-sm font-medium">{commentsCount}</span>
+                      <span className="text-sm font-medium">
+                        {commentsCount}
+                      </span>
                     </button>
-
-                    {/* Bookmark */}
                     <button
                       onClick={handleBookmark}
                       className="flex items-center gap-2 text-gray-600 hover:text-yellow-600 transition-all duration-200 active:scale-95"
-                      title="Bookmark article"
                     >
                       {bookmarked ? (
-                        <MdBookmark size={20} className="text-yellow-600 animate-bounce" />
+                        <MdBookmark
+                          size={20}
+                          className="text-yellow-600 animate-bounce"
+                        />
                       ) : (
                         <MdBookmarkBorder size={20} />
                       )}
-                      <span className="text-sm font-medium">{bookmarkCount}</span>
+                      <span className="text-sm font-medium">
+                        {bookmarkCount}
+                      </span>
                     </button>
                   </div>
-
-                  {/* Share */}
                   <button
                     onClick={handleShare}
                     className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200 active:scale-95"
-                    title="Share article"
                   >
                     <PiShareFatLight size={20} />
-                    <span className="text-sm font-medium hidden sm:inline">Share</span>
+                    <span className="text-sm font-medium hidden sm:inline">
+                      Share
+                    </span>
                   </button>
                 </div>
               )}

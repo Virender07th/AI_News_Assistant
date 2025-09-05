@@ -1,109 +1,107 @@
-import React, { useState ,  useEffect } from "react";
-import LoginImage from "../../assets/LoginImage.png";
-import { ArrowRight, Users } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowRight, Sparkles, GraduationCap } from "lucide-react";
 import SignupForm from "./SignupForm";
 import LoginForm from "./LoginForm";
-import Button from "../../Components/Resusable/Button";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-
 const Register = () => {
-   const [loginTypeForm, setLoginTypeForm] = useState(false);
+  const [loginTypeForm, setLoginTypeForm] = useState(false);
   const navigate = useNavigate();
-  useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
 
-  if (token) {
-    localStorage.setItem("token", token); // save token
-    toast.success("Login successful");
-    navigate("/dashboard"); // now PrivateRoute will allow access
-  }
-}, [navigate]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (token) {
+      localStorage.setItem("token", token);
+      toast.success("Login successful");
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4  sm:px-4">
-      <div className="flex flex-col items-center justify-center w-full py-5 max-w-[1080px] rounded-2xl">
-        {/* Header */}
-        <div className="text-center mb-6 px-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
-            Welcome to AI Study Platform
-          </h1>
-          <p className="text-sm text-gray-500">
-            Empowering your learning journey with AI.
-          </p>
+    <div
+  className={`min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 ${
+    loginTypeForm ? "pt-[20px]" : "pt-17"
+  }`}
+>
+      <div className="max-w-sm mx-auto">
+        {/* Main Form Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-4">
+          {/* Form Content */}
+          {loginTypeForm ? (
+            <SignupForm setLoginTypeForm={setLoginTypeForm} />
+          ) : (
+            <LoginForm setLoginTypeForm={setLoginTypeForm} />
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-sm text-gray-500 font-medium">or continue with</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Social Login Buttons */}
+          <div className="space-y-3">
+            <a
+              href="http://localhost:8000/api/v1/auth/google"
+              className="w-full flex items-center justify-center gap-3 h-11 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 bg-white text-gray-700 font-medium text-sm shadow-sm"
+            >
+              <FcGoogle className="w-5 h-5" />
+              Continue with Google
+            </a>
+
+            <a
+              href="http://localhost:8000/api/v1/auth/facebook"
+              className="w-full flex items-center justify-center gap-3 h-11 bg-[#1877F2] hover:bg-[#166FE5] rounded-xl transition-all duration-300 text-white font-medium text-sm shadow-md hover:shadow-lg"
+            >
+              <FaFacebook className="w-5 h-5" />
+              Continue with Facebook
+            </a>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col justify-center md:flex-row w-full gap-6 items-center">
-          {/* Form Section */}
-          <div className="w-full md:w-1/2 flex flex-col justify-center items-center gap-5 px-2">
-            {loginTypeForm ? (
-              <SignupForm setLoginTypeForm={setLoginTypeForm} />
-            ) : (
-              <LoginForm setLoginTypeForm={setLoginTypeForm} />
-            )}
-
-            {/* Divider */}
-            <div className="flex items-center gap-2 w-full max-w-[435px]">
-              <div className="flex-grow h-px bg-gray-300" />
-              <span className="text-sm text-gray-500">OR</span>
-              <div className="flex-grow h-px bg-gray-300" />
-            </div>
-
-            {/* Social Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-              <a
-                href="http://localhost:8000/api/v1/auth/google"
-                className="flex-1 flex items-center justify-center gap-3 h-12 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors duration-300 bg-white text-gray-700 font-medium text-sm"
-              >
-                <FcGoogle className="w-5 h-5" />
-                Google
-              </a>
-
-              <a
-                href="http://localhost:8000/api/v1/auth/facebook"
-                className="flex-1 flex items-center justify-center gap-3 h-12 bg-[#1877F2] hover:bg-[#166FE5] rounded-xl transition-colors duration-300 text-white font-medium text-sm shadow-sm hover:shadow-md"
-              >
-                <FaFacebook className="w-5 h-5" />
-                Facebook
-              </a>
-            </div>
-
-            {/* Footer Links */}
-           <div className="text-center w-full max-w-md pt-4">
-              <div className="text-sm text-gray-600 mb-2">
-                {loginTypeForm
-                  ? "Already have an account?"
-                  : "Don't have an account?"}
-                <button
-                  onClick={() => setLoginTypeForm(!loginTypeForm)}
-                  className="ml-1 text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200 inline-flex items-center gap-1"
-                >
-                  {loginTypeForm ? "Sign In" : "Sign Up"}
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </button>
-              </div>
-              <button
-                onClick={() => navigate("/forgot-password")}
-                className="text-sm text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-colors duration-200"
-              >
-                Forgot your password?
-              </button>
-            </div>
+        {/* Footer Links */}
+        <div className="text-center space-y-3">
+          {/* Toggle Form Type */}
+          <div className="text-sm text-gray-600">
+            {loginTypeForm ? "Already have an account?" : "Don't have an account?"}
+            <button
+              onClick={() => setLoginTypeForm(!loginTypeForm)}
+              className="ml-2 text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200 inline-flex items-center gap-1"
+            >
+              {loginTypeForm ? "Sign In" : "Sign Up"}
+              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+            </button>
           </div>
 
-          {/* Image Section */}
-          <div className="hidden lg:flex md:w-1/2 justify-center items-center">
-            <img
-              src={LoginImage}
-              alt="Register Visual"
-              className="w-full max-w-[430px] h-[550px] object-cover rounded-2xl shadow-lg hover:shadow-xl shadow-[#f9e6c9] transition-all duration-300 hover:scale-[1.02]"
-            />
-          </div>
+          {/* Forgot Password - Only show for login */}
+          {!loginTypeForm && (
+            <button
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-colors duration-200"
+            >
+              Forgot your password?
+            </button>
+          )}
+        </div>
+
+        {/* Terms and Privacy */}
+        <div className="text-center mt-6 pt-4 border-t border-gray-200">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            By continuing, you agree to our{" "}
+            <button className="text-blue-600 hover:text-blue-700 underline">
+              Terms of Service
+            </button>{" "}
+            and{" "}
+            <button className="text-blue-600 hover:text-blue-700 underline">
+              Privacy Policy
+            </button>
+          </p>
         </div>
       </div>
     </div>

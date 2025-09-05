@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { IoHeartOutline, IoChatbubbleOutline } from "react-icons/io5";
 import { MdBookmarkBorder, MdBookmark } from "react-icons/md";
 import { FcLike } from "react-icons/fc";
@@ -53,18 +53,34 @@ const initialComments = [
   },
 ];
 
-const article = {
-  category: "Finance",
-  heading: "Bitcoin Surges Past $100K Amid Market Optimism",
-  author: "Linda Torres",
-  publisher: "Bloomberg",
-  image: NewsImage,
-  description:
-    "Bitcoin has reached a record-breaking $100,000 valuation following bullish investor sentiment and increasing institutional adoption of cryptocurrency. This milestone represents a significant moment in the evolution of digital assets, driven by widespread institutional acceptance and regulatory clarity in major markets. The surge comes after months of steady growth, with major corporations and investment funds continuing to add Bitcoin to their portfolios as a hedge against inflation and currency devaluation.",
-  language: "English",
-};
+// const article = {
+//   category: "Finance",
+//   heading: "Bitcoin Surges Past $100K Amid Market Optimism",
+//   author: "Linda Torres",
+//   publisher: "Bloomberg",
+//   image: NewsImage,
+//   description:
+//     "Bitcoin has reached a record-breaking $100,000 valuation following bullish investor sentiment and increasing institutional adoption of cryptocurrency. This milestone represents a significant moment in the evolution of digital assets, driven by widespread institutional acceptance and regulatory clarity in major markets. The surge comes after months of steady growth, with major corporations and investment funds continuing to add Bitcoin to their portfolios as a hedge against inflation and currency devaluation.",
+//   language: "English",
+// };
+
+// {
+// -"source": {
+// "id": "cbs-news",
+// "name": "CBS News"
+// },
+// "author": "Kaia  Hubbard, Kathryn  Watson",
+// "title": "Watch Live: RFK Jr. testifies at Senate hearing today amid backlash over CDC turmoil, vaccine policies - CBS News",
+// "description": "Health and Human Services Secretary Robert F. Kennedy Jr. defended firing the director of the CDC at a hearing before a Senate committee on Thursday.",
+// "url": "https://www.cbsnews.com/live-updates/rfk-hearing-senate-finance-committee-cdc-vaccines/",
+// "urlToImage": "https://assets1.cbsnewsstatic.com/hub/i/r/2025/09/04/1628a2dc-e3ad-461d-9d8c-1e529ddc1f1b/thumbnail/1200x630/2c09df8b4c37327982b0b03dfcb29748/ap25247508543738.jpg",
+// "publishedAt": "2025-09-04T16:20:00Z",
+// "content": "Sen. John Barrasso of Wyoming, a Republican and a physician, said he was \"deeply concerned\" about how Kennedy and the CDC's vaccine panel are approaching recommendations.\r\n\"Secretary Kennedy, in your… [+1913 chars]"
+// },
 
 const FullNews = () => {
+   const { state } = useLocation();
+  const article = state || {};
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(1247);
@@ -334,7 +350,7 @@ const FullNews = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  <span>3 hours ago</span>
+                  <span>{article.date}</span>
                 </div>
               </div>
 
@@ -343,6 +359,8 @@ const FullNews = () => {
                 <p className="text-gray-700 leading-relaxed text-lg">
                   {article.description}
                 </p>
+                <a href={article.url} className="text-blue-600 mb-4 leading-relaxed text-md">
+                  {article.url}</a>
               </div>
 
               {/* Social Actions */}

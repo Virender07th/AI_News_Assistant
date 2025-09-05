@@ -7,6 +7,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const token =localStorage.getItem("token");
 
   const links = [
     { name: "Home", path: "/" },
@@ -28,7 +29,7 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="text-2xl font-bold text-blue-600">
-          AI News
+          AI News Assistant
         </Link>
 
        <div className="flex flex-row justify-center items-center gap-5">
@@ -53,7 +54,7 @@ const Navbar = () => {
         {/* Desktop CTA Button */}
         <div className="">
           <Button
-            content="Get Started"
+            content={token ? "Dashboard" :"Get Started"}
             condition={true}
             data={true}
             click={() => navigate("/register")}

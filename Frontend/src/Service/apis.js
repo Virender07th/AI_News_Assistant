@@ -44,7 +44,7 @@ export const savedEndpoints = {
 export const newsEndpoints = {
   GET_TOP_HEADLINES_NEWS_API: BASE_URL + "/news/top-headlines",
   GET_EVERYTHING_NEWS_API: BASE_URL + "/news/everything",
-  GET_GOOGLE_NEWS_API:BASE_URL +"/google-news"
+  GET_GOOGLE_NEWS_API:BASE_URL +"/news/google-news"
 };
 
 // ========== LIKES ENDPOINTS ==========

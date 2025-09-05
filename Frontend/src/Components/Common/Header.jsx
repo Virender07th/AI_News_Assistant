@@ -18,7 +18,7 @@ export const headerData = [
   {
     items: [
       { label: "AI Journalist Agents", path: "/ai-journalist" },
-      // { label: "AI News Anchor", path: "/news-anchor" },
+      { label: "AI News Anchor", path: "/news-anchor" },
     ],
   },
   {
@@ -55,7 +55,7 @@ const Header = () => {
             className="flex items-center space-x-2 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors duration-200"
           >
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AI News
+              AI News Assistant
             </span>
           </Link>
 

@@ -4,39 +4,49 @@ const parser = new Parser();
 
 const getTopHeadlines = async (req, res) => {
   try {
-    const { category, country, sources, pageSize = 20, page = 1 } = req.query;
+    let { category, country, sources, language, pageSize = 20, page = 1 } = req.query;
 
+    // Default: if no sources and no country provided, fallback to India
+    if (!sources && !country) {
+      country = "us";
+    }
+
+    // Validation: sources cannot be combined with country or category
     if (sources && (country || category)) {
       return res.status(400).json({
         success: false,
         message: "Cannot use 'sources' with 'country' or 'category' together",
       });
     }
+
+    // Build request params
     const params = {
-      apiKey: process.env.NEWSORG_API_KEY,
-      pageSize,
+      apiKey: process.env.NEWS_API_KEY,
+      pageSize: Math.min(pageSize, 100),
       page,
     };
 
     if (category) params.category = category;
     if (country) params.country = country;
     if (sources) params.sources = sources;
+    if (language) params.language = language; // ✅ added language support
 
     const response = await axios.get(
       `${process.env.NEWS_API_BASE_URL}/top-headlines`,
       { params }
     );
 
-    if (!response.data) {
-      return res.status(502).json({
+    if (response.data.status !== "ok") {
+      return res.status(400).json({
         success: false,
-        message: "Error fetching data from NewsAPI",
+        message: response.data.message || "NewsAPI returned an error",
       });
     }
+
     return res.status(200).json({
       success: true,
-      totalResults: response.data.totalResults,
-      articles: response.data.articles,
+      totalResults: response.data.totalResults || 0,
+      articles: response.data.articles || [],
     });
   } catch (error) {
     console.error("Error fetching top headlines:", error.message);
@@ -49,28 +59,23 @@ const getTopHeadlines = async (req, res) => {
 
 const getEverythingNews = async (req, res) => {
   try {
-    const {
-      qSearch,
-      from,
-      to,
-      sortBy,
-      sources,
-      language,
-      pageSize = 100,
-      page = 1,
-    } = req.query;
+    let { qSearch = "General News", language="en", pageSize = 100, page = 1 } = req.query;
+
+    const searchQuery = qSearch?.trim(); // keep spaces intact
+    if (!searchQuery) {
+      return res.status(400).json({
+        success: false,
+        message: "qSearch parameter is required",
+      });
+    }
 
     const params = {
-      apiKey: process.env.NEWSORG_API_KEY,
-      pageSize,
-      page,
+      apiKey: process.env.NEWS_API_KEY,
+      pageSize: Math.min(Number(pageSize), 100),
+      page: Number(page),
+      q: searchQuery, // send raw string, do NOT encode
     };
 
-    if (qSearch) params.q = qSearch;
-    if (from) params.from = from;
-    if (to) params.to = to;
-    if (sortBy) params.sortBy = sortBy;
-    if (sources) params.sources = sources;
     if (language) params.language = language;
 
     const response = await axios.get(
@@ -78,51 +83,46 @@ const getEverythingNews = async (req, res) => {
       { params }
     );
 
-    if (!response.data) {
-      return res.status(502).json({
+    if (response.data.status === "error") {
+      return res.status(400).json({
         success: false,
-        message: "Error fetching data from NewsAPI",
+        message: response.data.message || "NewsAPI returned an error",
       });
     }
+
     return res.status(200).json({
       success: true,
       totalResults: response.data.totalResults,
       articles: response.data.articles,
     });
   } catch (error) {
-    console.error("Error fetching Everythings News :", error.message);
+    console.error("Error fetching Everything News:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch Everything",
+      message: "Failed to fetch Everything News",
     });
   }
 };
 
+
 const getGoogleNews = async (req, res) => {
   try {
-    const newsCategories = [
-      "Business", "Technology", "Science", "Health", "Entertainment", "Sports",
-      "World", "Politics", "Environment", "Education", "Lifestyle", "Travel",
-      "Food", "Automobile", "Military", "Crime", "Opinion"
-    ];
-
     const {
-      qSearch = "AI",
-      categories, // optional, comma-separated
+      qSearch = "",
+      categories = "",
       hl = "en-IN",
       gl = "IN",
       ceid = "IN:en",
     } = req.query;
 
-    let searchQuery = qSearch.trim().replace(/\s+/g, "-");
+    let searchQuery = qSearch.trim();
+    if (categories) searchQuery += ` ${categories.trim()}`;
 
-    if (categories) {
-      const categoryList = categories.split(",").map(c => c.trim());
-      const validCategories = categoryList.filter(c => newsCategories.includes(c));
-      if (validCategories.length) {
-        // Combine categories with OR for RSS search
-        searchQuery += " " + validCategories.map(c => `"${c}"`).join(" OR ");
-      }
+    if (!searchQuery) {
+      return res.status(400).json({
+        success: false,
+        message: "qSearch cannot be empty",
+      });
     }
 
     const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(
@@ -132,25 +132,37 @@ const getGoogleNews = async (req, res) => {
     const response = await axios.get(rssUrl);
     const feed = await parser.parseString(response.data);
 
-    const articles = feed.items.map(item => {
-      const sourceName =
-        (item.source && item.source._) ||
-        item.creator ||
-        item.author ||
-        "Unknown";
+    // Map articles and fetch images from Pexels if needed
+    const articles = await Promise.all(
+      feed.items.map(async (item) => {
+        const sourceName =
+          (item.source && item.source._) || item.creator || item.author || "Unknown";
 
-      const rawDescription =
-        item.contentSnippet || item["content:encoded"] || item.description || "";
-      const cleanDescription = rawDescription.replace(/<[^>]*>/g, "").trim();
+        const rawDescription =
+          item.contentSnippet || item["content:encoded"] || item.description || "";
+        const cleanDescription = rawDescription.replace(/<[^>]*>/g, "").trim();
 
-      return {
-        title: item.title,
-        link: item.link,
-        pubDate: item.pubDate,
-        description: cleanDescription,
-        sourceName,
-      };
-    });
+        // Use enclosure/media:content if exists, otherwise fetch from Pexels
+        let imageUrl =
+          item.enclosure?.url || item["media:content"]?.url;
+
+        if (!imageUrl) {
+          // fallback to Pexels based on article title
+         
+          imageUrl = `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`|| `https://robohash.org/${encodeURIComponent(item.title)}?size=600x400`;
+
+        }
+
+        return {
+          title: item.title,
+          link: item.link,
+          pubDate: item.pubDate,
+          description: cleanDescription,
+          sourceName,
+          image: imageUrl,
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
@@ -165,6 +177,10 @@ const getGoogleNews = async (req, res) => {
     });
   }
 };
+
+
+export default getGoogleNews;
+
 
 
 export { getTopHeadlines, getEverythingNews, getGoogleNews };

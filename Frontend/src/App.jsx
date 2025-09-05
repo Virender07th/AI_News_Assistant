@@ -40,6 +40,7 @@ import Translator from "./Components/Core/AiJournalist/Translator";
 import FullNews from "./Components/Resusable/FullNews";
 import PrivateRoute from "./Components/Resusable/PrivateRoute";
 import CheckEmailPage from "./Pages/Auth/CheckEmail";
+import NewsVideoGenerator from "./Components/Core/AiJournalist/NewAnchor";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -63,7 +64,7 @@ function App() {
           }
         />
         <Route
-          path="forget-password"
+          path="forgot-password"
           element={
             <OpenRoute>
               <ForgetPassword />
@@ -103,7 +104,7 @@ function App() {
           <Route path="all-news" element={<AllNews />} />
           <Route path="news" element={<FullNews />} />
           <Route path="ai-journalist" element={<AiJournalistDashboard />} />
-          {/* <Route path="news-anchor" element={<AINewsAnchor />} /> */}
+          <Route path="news-anchor" element={<NewsVideoGenerator />} />
           <Route path="news-fetch" element={<NewsFetchLayout />} />
           <Route path="fact-check" element={<FactChecker />} />
           <Route path="bias-detection" element={<BiasDetection />} />

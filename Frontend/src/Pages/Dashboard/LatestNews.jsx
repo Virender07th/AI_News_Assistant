@@ -1,143 +1,169 @@
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getTopHeadlines } from "../../Service/Operations/NewsAPI";
+import NewsCard from "../../Components/Resusable/NewsCard";
+import { Search, Filter, Globe, Tag, RefreshCw } from "lucide-react";
 
+const languageOptions = {
+  de: "German",
+  en: "English",
+  hi: "Hindi",
+  es: "Spanish",
+  fr: "French",
+  it: "Italian",
+  ru: "Russian",
+  ud: "Urdu",
+  zh: "Chinese",
+};
 
-// LatestNews.jsx - Enhanced version
-import React from 'react';
-import NewsCard from '../../Components/Resusable/NewsCard';
-import NewsImage from '../../assets/bg2.jpg';
-import { TrendingUp, Sparkles } from 'lucide-react';
-
-const newsData = [
-  {
-    category: "AI",
-    heading: "OpenAI Releases GPT-5 With Major Upgrades",
-    author: "Sophia Lee",
-    publisher: "TechCrunch",
-    image: NewsImage,
-    description:
-      "OpenAI has officially launched GPT-5, its most powerful language model to date, offering significant improvements in reasoning, multilingual support, and safety. The new model demonstrates unprecedented capabilities in complex problem-solving and creative tasks, setting new benchmarks for artificial intelligence performance."
-  },
-  {
-    category: "Space",
-    heading: "NASA Discovers Potentially Habitable Exoplanet",
-    author: "James Carter",
-    publisher: "NASA Newsroom",
-    image: NewsImage,
-    description:
-      "Astronomers at NASA have identified a new Earth-sized exoplanet located in the habitable zone, raising hopes for potential life beyond our solar system. The planet, dubbed Kepler-442c, shows promising signs of having liquid water and a stable atmosphere."
-  },
-  {
-    category: "Cybersecurity",
-    heading: "Global Ransomware Attack Hits Over 50 Countries",
-    author: "Aisha Khan",
-    publisher: "CyberWire",
-    image: NewsImage,
-    description:
-      "A coordinated ransomware attack has affected critical infrastructure in over 50 countries, prompting emergency responses from global cybersecurity agencies. The attack highlights the urgent need for improved international cybersecurity cooperation."
-  },
-  {
-    category: "Healthcare",
-    heading: "AI Diagnoses Rare Diseases With 90% Accuracy",
-    author: "Dr. Rajiv Sharma",
-    publisher: "Medical AI Weekly",
-    image: NewsImage,
-    description:
-      "Researchers have developed an AI system that can accurately diagnose over 200 rare conditions, potentially revolutionizing early detection in medicine. The breakthrough could help millions of patients worldwide receive timely and accurate diagnoses."
-  },
-  {
-    category: "Finance",
-    heading: "Bitcoin Surges Past $100K Amid Market Optimism",
-    author: "Linda Torres",
-    publisher: "Bloomberg",
-    image: NewsImage,
-    description:
-      "Bitcoin has reached a record-breaking $100,000 valuation following bullish investor sentiment and increasing institutional adoption of cryptocurrency. The milestone marks a significant moment in the evolution of digital assets."
-  }
-];
+const categoryOptions = {
+  general: "General",
+  business: "Business",
+  entertainment: "Entertainment",
+  health: "Health",
+  science: "Science",
+  sports: "Sports",
+  technology: "Technology",
+};
 
 const LatestNews = () => {
+  const dispatch = useDispatch();
+  const { newses } = useSelector((state) => state.news); // ✅ get from redux
+  const { token } = useSelector((state) => state.auth);
+  const [languageFilter, setLanguageFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  console.log(newses);
+  
+  const hasActiveFilters = languageFilter || categoryFilter;
+
+  useEffect(() => {
+    dispatch(
+      getTopHeadlines(token, {
+        language: languageFilter || undefined,
+        category: categoryFilter || undefined,
+      })
+    );
+  }, [dispatch, token, languageFilter, categoryFilter]);
+
+  const clearFilters = () => {
+    setLanguageFilter("");
+    setCategoryFilter("");
+  };
+
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-grid-white/10 bg-grid-16"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <TrendingUp className="w-8 h-8 text-yellow-300" />
-              <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-              <span className="block">Latest</span>
-              <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                Trending News
-              </span>
-            </h1>
-            
-            <p className="max-w-2xl mx-auto text-lg sm:text-xl text-blue-100 leading-relaxed">
-              Stay informed with the most important stories, powered by AI journalism and real-time fact-checking
-            </p>
-            
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 mt-8 text-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-300">{newsData.length}</div>
-                <div className="text-blue-200">Breaking Stories</div>
-              </div>
-              <div className="w-px h-8 bg-blue-400/30"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-300">24/7</div>
-                <div className="text-blue-200">AI Coverage</div>
-              </div>
-              <div className="w-px h-8 bg-blue-400/30"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-300">100%</div>
-                <div className="text-blue-200">Fact-Checked</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* News Grid Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 lg:py-6">
         {/* Section Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
             Today's Top Stories
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
+
+          {/* Filter Toggle */}
+          <div className="flex items-center justify-between mt-6 mb-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filters</span>
+              {hasActiveFilters && (
+                <span className="ml-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                  Active
+                </span>
+              )}
+            </button>
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              {/* Language Filter */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Globe className="w-4 h-4" />
+                  Language
+                </label>
+                <select
+                  value={languageFilter}
+                  onChange={(e) => setLanguageFilter(e.target.value)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">All Languages</option>
+                  {Object.entries(languageOptions).map(([code, label]) => (
+                    <option key={code} value={code}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Tag className="w-4 h-4" />
+                  Category
+                </label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">All Categories</option>
+                  {Object.entries(categoryOptions).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* News Cards Grid */}
-        <div className="space-y-8 lg:space-y-12">
-          {newsData.map((item, index) => (
-            <div
-              key={index}
-              className="transform transition-all duration-500 hover:scale-[1.02]"
-            >
-              <NewsCard
-                heading={item.heading}
-                description={item.description}
-                image={item.image}
-                author={item.author}
-                publisher={item.publisher}
-                category={item.category}
-                btns={true}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Load More Section */}
-        <div className="text-center mt-16">
-          <button className="group relative inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-            <span>Load More Stories</span>
-            <TrendingUp className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-          </button>
+        <div className="space-y-4 lg:space-y-8">
+          {newses && newses.length > 0 ? (
+            newses.map((item, index) => (
+              <div
+                key={index}
+                className="transform transition-all duration-500 hover:scale-[1.02]"
+              >
+                <NewsCard
+                  heading={item.title || "Untitled"}
+                  description={item.description || "No description available."}
+                  image={item.urlToImage || "/fallback-news.jpg"} // ✅ fallback
+                  author={
+                    item.author && item.author.trim() !== ""
+                      ? item.author
+                      : "Unknown"
+                  }
+                  publisher={item.source?.name || "Unknown Source"}
+                  category={categoryFilter || "General"}
+                  btns={true}
+                  date={item.publishedAt || "few hour ago"}
+                  url={item.url} // ✅ you can make NewsCard button open this
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-600">No news found.</p>
+          )}
         </div>
       </div>
     </div>
