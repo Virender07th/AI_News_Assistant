@@ -1,31 +1,64 @@
+# app/Service/Summarizer.py
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 import os
 
-# Load environment variables (for Groq API key, if needed)
+# Load environment variables
 load_dotenv()
 
-llm = ChatGroq(model="llama3-8b-8192", temperature=0.1)
+llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.1)
 parser = StrOutputParser()
 
-
+# -----------------------------
 # Paragraph Summary
+# -----------------------------
 paragraph_prompt = PromptTemplate.from_template(
     """
 You are a professional news summarizer.
 
 TASK:
-- Write a concise and factually accurate summary of the news article below.
-- Format the summary as a **single coherent paragraph** (5 to 8 lines max).
-- Use formal language, maintain a **neutral tone**, and avoid exaggeration or subjective phrasing.
+- Summarize the news article into a **single coherent paragraph** (5–8 sentences max).
+- Focus only on verified facts from the article.
+- Maintain a neutral, formal journalistic tone.
+- Avoid filler phrases like "In conclusion" or "This article states".
 
-REQUIREMENTS:
-- Include critical details: names, dates, places, events, numbers, and outcomes.
-- Preserve the chronological and logical flow of the article.
-- Do NOT add opinions, assumptions, or emotional language.
-- Output only the final summary paragraph.
+OUTPUT:
+Return only the paragraph, no titles or extra labels.
+
+NEWS ARTICLE:
+{article}
+"""
+)
+highlight_prompt = PromptTemplate.from_template(
+    """
+You are an assistant tasked with extracting highlights from a news article.
+
+TASK:
+- Identify and list **5–10 highlights** from the article.
+- Each highlight must be a **short, standalone phrase (6–12 words)**.
+- No numbering, no intro text, no explanations.
+
+OUTPUT:
+Return highlights as a plain list, one per line.
+
+NEWS ARTICLE:
+{article}
+"""
+)
+bullet_prompt = PromptTemplate.from_template(
+    """
+You are an experienced news analyst.
+
+TASK:
+- Extract **5–10 key factual bullet points** from the article.
+- Each point must be a **clear, complete sentence** (not a fragment).
+- Cover the most important facts without repetition.
+- Do not add headers, numbering, or extra commentary.
+
+OUTPUT:
+Return bullet points as a plain list, one per line.
 
 NEWS ARTICLE:
 {article}
@@ -33,7 +66,9 @@ NEWS ARTICLE:
 )
 
 
+
 paragraph_chain = paragraph_prompt | llm | parser
+
 
 def generate_paragraph(text: str) -> str:
     try:
@@ -42,30 +77,12 @@ def generate_paragraph(text: str) -> str:
         return f"Error generating paragraph: {str(e)}"
 
 
-
+# -----------------------------
 # Bullet Point Summary
-bullet_prompt = PromptTemplate.from_template(
-    """
-You are an experienced news analyst.
-
-TASK:
-- Extract **5 to 10 key factual bullet points** from the news article below.
-- Each bullet point must be a **clear, complete sentence**.
-- Focus on verified facts, concrete outcomes, and meaningful details.
-
-INSTRUCTIONS:
-- Avoid vague language like “reportedly”, “may”, or “it is said”.
-- Do NOT include opinions, speculation, or unsupported claims.
-- Do NOT start bullets with symbols like -, *, or ●.
-- Ensure each point is **independent and self-explanatory**.
-
-NEWS ARTICLE:
-{article}
-"""
-)
-
+# -----------------------------
 
 bullet_chain = bullet_prompt | llm | parser
+
 
 def generate_bullets(text: str) -> list:
     try:
@@ -75,26 +92,9 @@ def generate_bullets(text: str) -> list:
         return [f"Error generating bullets: {str(e)}"]
 
 
-
-highlight_prompt = PromptTemplate.from_template(
-    """
-You are an assistant tasked with extracting concise highlights from a news article.
-
-TASK:
-- Identify and output **5 to 10 brief highlights** from the news.
-- Each highlight should be a **short, impactful phrase** (6–12 words).
-- Do NOT use full sentences or bullet points.
-- Maintain a **factual and objective** tone.
-
-GUIDELINES:
-- Focus on key developments, facts, data points, actions, or consequences.
-- Avoid filler phrases, opinions, adjectives, or vague terms like “important news” or “it seems”.
-- Each highlight must be on a **separate line** with no symbols or numbering.
-
-NEWS ARTICLE:
-{article}
-"""
-)
+# -----------------------------
+# Highlights Summary
+# -----------------------------
 
 highlight_chain = highlight_prompt | llm | parser
 

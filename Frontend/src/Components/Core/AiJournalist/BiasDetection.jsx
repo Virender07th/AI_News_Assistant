@@ -1,9 +1,12 @@
-
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, CheckCircle, TrendingUp, Brain, BarChart3 } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { biasDetection } from "../../../Service/Operations/AiOperation"; // Import your API function
 import Button from "../../Resusable/Button";
+
 const BiasDetection = () => {
-  const [topic, setTopic] = useState("");
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({ url: "", topic: "" });
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,49 +23,15 @@ const BiasDetection = () => {
     "Finalizing report..."
   ];
 
-  useEffect(() => {
-    if (!done || !loading) return;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    let currentStage = 0;
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + Math.random() * 15 + 5;
-        
-        if (currentStage < analysisStages.length && newProgress > (currentStage + 1) * 16) {
-          setAnalysisStage(analysisStages[currentStage]);
-          currentStage++;
-        }
-
-        if (newProgress >= 100) {
-          clearInterval(timer);
-          setLoading(false);
-          setAnalysisStage("Analysis complete!");
-          
-          // Generate mock bias data
-          setBiasData({
-            overallScore: Math.floor(Math.random() * 40) + 30, // 30-70%
-            categories: {
-              political: Math.floor(Math.random() * 60) + 20,
-              emotional: Math.floor(Math.random() * 50) + 25,
-              factual: Math.floor(Math.random() * 30) + 70
-            },
-            keyPhrases: ["market disruption", "significant impact", "experts believe", "potential concerns"],
-            sentiment: Math.random() > 0.5 ? "slightly positive" : "slightly negative",
-            confidence: Math.floor(Math.random() * 20) + 80
-          });
-          
-          return 100;
-        }
-        return newProgress;
-      });
-    }, 150);
-
-    return () => clearInterval(timer);
-  }, [done, loading]);
-
+  // Real API call implementation
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    if (!topic.trim()) {
+    if (!formData.url.trim() && !formData.topic.trim()) {
       setError("Please enter some content to analyze");
       return;
     }
@@ -73,6 +42,53 @@ const BiasDetection = () => {
     setProgress(0);
     setAnalysisStage("Initializing analysis...");
     setBiasData(null);
+
+    // Start progress animation
+    let currentStage = 0;
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = Math.min(prev + Math.random() * 10 + 5, 90);
+        
+        if (currentStage < analysisStages.length && newProgress > (currentStage + 1) * 15) {
+          setAnalysisStage(analysisStages[currentStage]);
+          currentStage++;
+        }
+        
+        return newProgress;
+      });
+    }, 300);
+
+    try {
+      // Prepare the payload to match your API expectations
+      const payload = {
+        topic: formData.topic || null,
+        url: formData.url || null
+      };
+
+      // Get token (adjust based on your auth implementation)
+      const token = localStorage.getItem("token"); // or however you store your token
+
+      // Call the API
+      const response = await dispatch(biasDetection(payload, token));
+      
+      clearInterval(progressTimer);
+      setProgress(100);
+      setAnalysisStage("Analysis complete!");
+
+      // Extract bias data from API response
+      if (response.success && response.data && response.data.biasData) {
+        setBiasData(response.data.biasData);
+      } else {
+        throw new Error("Invalid response format");
+      }
+
+    } catch (err) {
+      clearInterval(progressTimer);
+      setError(err.message || "Analysis failed. Please try again.");
+      setDone(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getBiasLevel = (score) => {
@@ -113,49 +129,78 @@ const BiasDetection = () => {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
-          {/* Input Section */}
+           {/* Input */}
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Content Analysis</h2>
-                <p className="text-gray-600">Enter your content below for bias detection</p>
-              </div>
+            <form onSubmit={SubmitHandler}>
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Content Analysis</h2>
+                  <p className="text-gray-600">Enter your content below for bias detection</p>
+                </div>
 
-              <div className="space-y-4">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Article Content or Topic
-                </label>
-                <textarea
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Paste your article content, URL, or topic here. For example: 'The new AI technology will revolutionize healthcare and eliminate thousands of jobs...'"
-                  rows={8}
-                  className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all duration-200 hover:border-gray-300"
-                  required
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Article URL
+                    </label>
+                    <input
+                      type="url"
+                      name="url"
+                      value={formData.url}
+                      onChange={handleChange}
+                      disabled={loading}
+                      placeholder="https://example.com/article"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    <span className="bg-white px-4 py-2 text-gray-500 font-medium rounded-full text-sm">
+                      — or —
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Article Content
+                    </label>
+                    <textarea
+                      name="topic"
+                      rows={8}
+                      value={formData.topic}
+                      onChange={handleChange}
+                      disabled={loading}
+                      placeholder="Paste your article content here..."
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none transition-all duration-200 hover:border-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>{formData.topic.length} characters</span>
+                      <span>Min 50 characters recommended</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  content={loading ? "Analyzing Content..." : "Detect Bias"}
+                  condition={
+                    !loading &&
+                    (formData.url.trim() || formData.topic.trim())
+                  }
+                  data={true}
+                  loading={loading}
+                  click={SubmitHandler}
+                  fullWidth={true}
+                  icon={loading ? undefined : Brain}
                 />
-                <div className="text-xs text-gray-500 flex justify-between">
-                  <span>{topic.length} characters</span>
-                  <span>Min 50 characters recommended</span>
-                </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <AlertTriangle size={16} className="text-red-500" />
+                    <p className="text-sm text-red-600 font-medium">{error}</p>
+                  </div>
+                )}
               </div>
-
-              <Button
-                content={loading ? "Analyzing Content..." : "Detect Bias"}
-                condition={!loading && topic.length > 10}
-                data={true}
-                loading={loading}
-                click={SubmitHandler}
-                fullWidth={true}
-                icon={loading ? undefined : Brain}
-              />
-
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <AlertTriangle size={16} className="text-red-500" />
-                  <p className="text-sm text-red-600 font-medium">{error}</p>
-                </div>
-              )}
-            </div>
+            </form>
           </div>
 
           {/* Quick Stats Preview */}
@@ -235,7 +280,7 @@ const BiasDetection = () => {
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-600">Key Detected Phrases:</div>
                     <div className="flex flex-wrap gap-2">
-                      {biasData.keyPhrases.map((phrase, index) => (
+                      {biasData.keyPhrases && biasData.keyPhrases.map((phrase, index) => (
                         <span key={index} className="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs">
                           {phrase}
                         </span>
@@ -245,7 +290,7 @@ const BiasDetection = () => {
                 </div>
                 <div className="space-y-4">
                   <div className="text-sm font-medium text-gray-600">Category Breakdown:</div>
-                  {Object.entries(biasData.categories).map(([category, score]) => (
+                  {biasData.categories && Object.entries(biasData.categories).map(([category, score]) => (
                     <div key={category} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span className="capitalize font-medium">{category} Bias</span>
@@ -267,28 +312,6 @@ const BiasDetection = () => {
                   ))}
                 </div>
               </div>
-            </div>
-
-            {/* Recommendations */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6">
-              <h3 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
-                <TrendingUp className="text-blue-600" size={20} />
-                Recommendations
-              </h3>
-              <ul className="space-y-2 text-sm text-blue-700">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Cross-reference with multiple sources for balanced perspective
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Look for primary sources and direct quotes
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Consider the publication's historical editorial stance
-                </li>
-              </ul>
             </div>
 
             <div className="text-center">

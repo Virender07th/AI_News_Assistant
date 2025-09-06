@@ -26,7 +26,7 @@ app.add_middleware(
 
 
 # AI NEWS 
-app.include_router(summarize_route, prefix="/api/summarizer") 
+app.include_router(summarize_route, prefix="/api") 
 app.include_router(translate_route , prefix="/api")
 app.include_router(newsArticleFetch_router , prefix="/api" )
 app.include_router(factChecker_router , prefix="/api" )

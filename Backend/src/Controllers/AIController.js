@@ -47,7 +47,7 @@ const callFastAPI = async (endpoint, data, res, meta = null) => {
 
     const apiData = response.data;
 
-    if (apiData.success) {
+    if (apiData) {
       // Record activity if meta info is provided
       if (meta) {
         await recordActivityHelper({
@@ -105,31 +105,14 @@ const BiasDetection = async (req, res) => {
   });
 };
 
-const ParagraphSummarizer = async (req, res) => {
-  await callFastAPI(AiEndpoints.PARAGRAPH_SUMMARIZE_API, req.body, res, {
+const Summarizer = async (req, res) => {
+  await callFastAPI(AiEndpoints.SUMMARIZER_API, req.body, res, {
     userId: req.user.id,
     type: "summary",
     title: req.body.topic || "Paragraph Summary News Article",
   });
 };
 
-const BulletsSummarizer = async (req, res) => {
-  console.log("✔ Pre Bullets summarizer route hit!");
-  await callFastAPI(AiEndpoints.BULLETS_SUMMARIZE_API, req.body, res, {
-    userId: req.user.id,
-    type: "summary",
-    title: req.body.topic || "Bullets Point Summary News Article",
-  });
-  console.log("✔ Post Bullets summarizer route hit!");
-};
-
-const HighlightSummarizer = async (req, res) => {
-  await callFastAPI(AiEndpoints.HIGHLIGHT_SUMMARIZE_API, req.body, res, {
-    userId: req.user.id,
-    type: "summary",
-    title: req.body.topic || "Highlight Summary News Article",
-  });
-};
 
 const TranslateArticle = async (req, res) => {
   await callFastAPI(AiEndpoints.TRANSLATE_API, req.body, res, {
@@ -149,9 +132,7 @@ export {
   FetchNewsArticles,
   FactCheck,
   BiasDetection,
-  ParagraphSummarizer,
-  BulletsSummarizer,
-  HighlightSummarizer,
+  Summarizer,
   TranslateArticle,
   GenerateNewsArticle,
 };

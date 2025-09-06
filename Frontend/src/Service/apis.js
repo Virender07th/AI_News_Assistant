@@ -70,9 +70,7 @@ export const AiEndpoints = {
   FETCH_NEWS_ARTICLES_API: BASE_URL + "/ai/fetch-news",
   FACT_CHECK_NEWS_API: BASE_URL + "/ai/fact-check",
   BIAS_DETECTION_API: BASE_URL + "/ai/bias-detection",
-  PARAGRAPH_SUMMARIZER_API: BASE_URL + "/ai/summarizer/para",
-  BULLETS_SUMMARIZER_API: BASE_URL + "/ai/summarizer/bullets",
-  HIGHLIGHT_SUMMARIZER_API: BASE_URL + "/ai/summarizer/highlight",
+  SUMMARIZER_API: BASE_URL + "/ai/summarizer",
   TRANSLATE_API: BASE_URL + "/ai/translate",
   GENERATE_NEWS_ARTICLE_API: BASE_URL + "/ai/generate-news",
 };

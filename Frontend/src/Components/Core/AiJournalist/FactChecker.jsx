@@ -1,101 +1,109 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { AlertTriangle, CheckCircle, TrendingUp, Shield, Search, ExternalLink } from "lucide-react";
 import Button from "../../Resusable/Button";
+import { factCheckNews } from "../../../Service/Operations/AiOperation";
 
 const FactChecker = () => {
-  const [topic, setTopic] = useState("");
-  const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const { token } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.auth);
+
+  const [formData, setFormData] = useState({ url: "", topic: "" });
   const [error, setError] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [analysisStage, setAnalysisStage] = useState("");
   const [factData, setFactData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const analysisStages = [
-    "Parsing content...",
-    "Searching trusted sources...",
-    "Cross-referencing claims...",
-    "Analyzing credibility...",
-    "Generating fact score...",
-    "Finalizing report..."
-  ];
-
-  const mockSources = [
-    { title: "Reuters - Technology News", url: "reuters.com", verified: "2024-07-21", credibility: 95 },
-    { title: "Associated Press - Science", url: "apnews.com", verified: "2024-07-21", credibility: 98 },
-    { title: "BBC News - Health", url: "bbc.com", verified: "2024-07-21", credibility: 92 },
-    { title: "Nature Journal", url: "nature.com", verified: "2024-07-21", credibility: 99 },
-    { title: "Scientific American", url: "scientificamerican.com", verified: "2024-07-21", credibility: 94 },
-    { title: "PolitiFact", url: "politifact.com", verified: "2024-07-21", credibility: 89 }
-  ];
-
-  useEffect(() => {
-    if (!done || !loading) return;
-
-    let currentStage = 0;
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + Math.random() * 15 + 5;
-        
-        if (currentStage < analysisStages.length && newProgress > (currentStage + 1) * 16) {
-          setAnalysisStage(analysisStages[currentStage]);
-          currentStage++;
-        }
-
-        if (newProgress >= 100) {
-          clearInterval(timer);
-          setLoading(false);
-          setAnalysisStage("Fact-check complete!");
-          
-          // Generate mock fact data
-          const truthScore = Math.floor(Math.random() * 40) + 60; // 60-100%
-          setFactData({
-            overallScore: truthScore,
-            verdict: truthScore > 85 ? "TRUE" : truthScore > 65 ? "MOSTLY TRUE" : "MIXED",
-            categories: {
-              factual: Math.floor(Math.random() * 30) + 70,
-              sourced: Math.floor(Math.random() * 40) + 60,
-              consistent: Math.floor(Math.random() * 35) + 65
-            },
-            keyClaims: ["AI technology advancement", "market impact assessment", "employment effects", "regulatory framework"],
-            confidence: Math.floor(Math.random() * 20) + 80,
-            sources: mockSources.slice(0, Math.floor(Math.random() * 3) + 3)
-          });
-          
-          return 100;
-        }
-        return newProgress;
-      });
-    }, 150);
-
-    return () => clearInterval(timer);
-  }, [done, loading]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(""); // Clear error when user starts typing
+  };
 
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    if (!topic.trim()) {
+    
+    if (!formData.url.trim() && !formData.topic.trim()) {
       setError("Please enter some content or URL to fact-check");
+      return;
+    }
+
+    if (formData.topic.trim() && formData.topic.trim().length < 10) {
+      setError("Please enter at least 10 characters of content");
       return;
     }
     
     setError("");
-    setLoading(true);
-    setDone(true);
-    setProgress(0);
-    setAnalysisStage("Initializing fact-check...");
+    setIsAnalyzing(true);
     setFactData(null);
+
+    try {
+      // Prepare JSON payload
+      const payload = {};
+      
+      if (formData.url.trim()) {
+        payload.url = formData.url.trim();
+      }
+      
+      if (formData.topic.trim()) {
+        payload.content = formData.topic.trim();
+      }
+
+      const result = await dispatch(factCheckNews(payload, token));
+      
+      if (result && result.success) {
+        setFactData(result.data);
+      }
+    } catch (error) {
+      console.error("Fact check error:", error);
+      setError("Failed to perform fact check. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const getVerdictStyle = (verdict) => {
-    switch (verdict) {
+    switch (verdict?.toUpperCase()) {
       case "TRUE":
-        return { level: "TRUE", color: "green", bg: "bg-green-50", border: "border-green-200", icon: CheckCircle };
+        return { 
+          level: "TRUE", 
+          color: "green", 
+          bg: "bg-green-50", 
+          border: "border-green-200", 
+          icon: CheckCircle,
+          textColor: "text-green-800",
+          badgeColor: "bg-green-100"
+        };
       case "MOSTLY TRUE":
-        return { level: "MOSTLY TRUE", color: "blue", bg: "bg-blue-50", border: "border-blue-200", icon: CheckCircle };
+        return { 
+          level: "MOSTLY TRUE", 
+          color: "blue", 
+          bg: "bg-blue-50", 
+          border: "border-blue-200", 
+          icon: CheckCircle,
+          textColor: "text-blue-800",
+          badgeColor: "bg-blue-100"
+        };
       case "MIXED":
-        return { level: "MIXED", color: "yellow", bg: "bg-yellow-50", border: "border-yellow-200", icon: AlertTriangle };
+        return { 
+          level: "MIXED", 
+          color: "yellow", 
+          bg: "bg-yellow-50", 
+          border: "border-yellow-200", 
+          icon: AlertTriangle,
+          textColor: "text-yellow-800",
+          badgeColor: "bg-yellow-100"
+        };
       default:
-        return { level: "FALSE", color: "red", bg: "bg-red-50", border: "border-red-200", icon: AlertTriangle };
+        return { 
+          level: "FALSE", 
+          color: "red", 
+          bg: "bg-red-50", 
+          border: "border-red-200", 
+          icon: AlertTriangle,
+          textColor: "text-red-800",
+          badgeColor: "bg-red-100"
+        };
     }
   };
 
@@ -133,38 +141,63 @@ const FactChecker = () => {
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
           {/* Input Section */}
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
-            <div className="space-y-6">
+            <form onSubmit={SubmitHandler} className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Fact Verification</h2>
                 <p className="text-gray-600">Enter claims, articles, or URLs for fact-checking</p>
               </div>
 
-              <div className="space-y-4">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Content, Topic, or News URL
-                </label>
-                <textarea
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Paste your article content, URL, or specific claim here. For example: 'https://news.com/article' or 'AI will replace 40% of jobs by 2030...'"
-                  rows={8}
-                  className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all duration-200 hover:border-gray-300"
-                  required
-                />
-                <div className="text-xs text-gray-500 flex justify-between">
-                  <span>{topic.length} characters</span>
-                  <span>URLs and specific claims work best</span>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Article URL
+                  </label>
+                  <input
+                    type="url"
+                    name="url"
+                    value={formData.url}
+                    onChange={handleChange}
+                    disabled={loading || isAnalyzing}
+                    placeholder="https://example.com/article"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="text-center">
+                  <span className="bg-white px-4 py-2 text-gray-500 font-medium rounded-full text-sm">
+                    — or —
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Article Content
+                  </label>
+                  <textarea
+                    name="topic"
+                    rows={8}
+                    value={formData.topic}
+                    onChange={handleChange}
+                    disabled={loading || isAnalyzing}
+                    placeholder="Paste your article content here..."
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm text-sm bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none transition-all duration-200 hover:border-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  <div className="text-xs text-gray-500 flex justify-between">
+                    <span>{formData.topic.length} characters</span>
+                    <span>Min 10 characters required</span>
+                  </div>
                 </div>
               </div>
 
               <Button
-                content={loading ? "Fact-Checking..." : "Verify Facts"}
-                condition={!loading && topic.length > 10}
+                content={isAnalyzing ? "Fact-Checking..." : "Verify Facts"}
+                condition={!loading && !isAnalyzing && (formData.url.trim() || (formData.topic.trim() && formData.topic.length >= 10))}
                 data={true}
-                loading={loading}
+                loading={isAnalyzing}
                 click={SubmitHandler}
                 fullWidth={true}
-                icon={loading ? undefined : Shield}
+                icon={isAnalyzing ? undefined : Shield}
+                type="submit"
               />
 
               {error && (
@@ -173,7 +206,7 @@ const FactChecker = () => {
                   <p className="text-sm text-red-600 font-medium">{error}</p>
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
           {/* Quick Stats Preview */}
@@ -183,50 +216,45 @@ const FactChecker = () => {
               Verification Overview
             </h3>
             
-            {!done ? (
+            {!factData && !isAnalyzing ? (
               <div className="space-y-4 text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Shield className="text-gray-400" size={32} />
                 </div>
                 <p className="text-gray-500">Submit content to see fact-check results</p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Progress Section */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Verification Progress</span>
-                    <span className="text-sm font-bold text-green-600">{Math.round(progress)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-300 ease-out rounded-full"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 italic">{analysisStage}</p>
+            ) : isAnalyzing ? (
+              <div className="space-y-4 text-center py-12">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Search className="text-blue-600" size={32} />
                 </div>
-
-                {/* Real-time stats */}
-                {factData && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/70 rounded-xl p-4 border border-gray-200">
-                      <div className="text-2xl font-bold text-green-600">{factData.overallScore}%</div>
-                      <div className="text-xs text-gray-500">Truth Score</div>
-                    </div>
-                    <div className="bg-white/70 rounded-xl p-4 border border-gray-200">
-                      <div className="text-2xl font-bold text-blue-600">{factData.confidence}%</div>
-                      <div className="text-xs text-gray-500">Confidence</div>
-                    </div>
-                  </div>
-                )}
+                <p className="text-blue-600 font-medium">Analyzing content...</p>
+                <p className="text-gray-500 text-sm">This may take a few moments</p>
               </div>
-            )}
+            ) : factData ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/70 rounded-xl p-4 border border-gray-200">
+                    <div className="text-2xl font-bold text-green-600">{factData.overallScore}%</div>
+                    <div className="text-xs text-gray-500">Truth Score</div>
+                  </div>
+                  <div className="bg-white/70 rounded-xl p-4 border border-gray-200">
+                    <div className="text-2xl font-bold text-blue-600">{factData.confidence}%</div>
+                    <div className="text-xs text-gray-500">Confidence</div>
+                  </div>
+                </div>
+                <div className={`${verdictStyle.bg} ${verdictStyle.border} border-2 rounded-xl p-4 text-center`}>
+                  <span className={`px-4 py-2 ${verdictStyle.badgeColor} ${verdictStyle.textColor} font-bold rounded-full text-sm`}>
+                    {verdictStyle.level}
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
         {/* Results Section */}
-        {done && !loading && factData && (
+        {factData && !isAnalyzing && (
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8 space-y-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Fact Check Report</h2>
@@ -240,7 +268,7 @@ const FactChecker = () => {
                   <verdictStyle.icon className={`text-${verdictStyle.color}-600`} size={24} />
                   Fact Check Verdict
                 </h3>
-                <span className={`px-4 py-2 bg-${verdictStyle.color}-100 text-${verdictStyle.color}-800 font-bold rounded-full text-sm`}>
+                <span className={`px-4 py-2 ${verdictStyle.badgeColor} ${verdictStyle.textColor} font-bold rounded-full text-sm`}>
                   {verdictStyle.level}
                 </span>
               </div>
@@ -250,108 +278,107 @@ const FactChecker = () => {
                     The content is assessed as <strong>{factData.verdict.toLowerCase()}</strong> with a truth score of <strong>{factData.overallScore}%</strong>. 
                     Our analysis cross-referenced multiple trusted sources with {factData.confidence}% confidence.
                   </p>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-600">Key Claims Verified:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {factData.keyClaims.map((claim, index) => (
-                        <span key={index} className="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs">
-                          {claim}
-                        </span>
-                      ))}
+                  {factData.keyClaims && factData.keyClaims.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-600">Key Claims Verified:</div>
+                      <div className="space-y-1">
+                        {factData.keyClaims.map((claim, index) => (
+                          <div key={index} className="text-xs bg-white border border-gray-300 rounded-lg p-2">
+                            {claim}
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+                {factData.categories && (
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium text-gray-600">Verification Breakdown:</div>
+                    {Object.entries(factData.categories).map(([category, score]) => (
+                      <div key={category} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="capitalize font-medium">{category} Accuracy</span>
+                          <span className="font-bold">{score}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full bg-gradient-to-r ${
+                              score > 80 
+                                ? 'from-green-400 to-green-500' 
+                                : score > 60 
+                                  ? 'from-yellow-400 to-yellow-500'
+                                  : 'from-red-400 to-red-500'
+                            }`}
+                            style={{ width: `${score}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="text-sm font-medium text-gray-600">Verification Breakdown:</div>
-                  {Object.entries(factData.categories).map(([category, score]) => (
-                    <div key={category} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="capitalize font-medium">{category} Accuracy</span>
-                        <span className="font-bold">{score}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full bg-gradient-to-r ${
-                            score > 80 
-                              ? 'from-green-400 to-green-500' 
-                              : score > 60 
-                                ? 'from-yellow-400 to-yellow-500'
-                                : 'from-red-400 to-red-500'
-                          }`}
-                          style={{ width: `${score}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                )}
               </div>
             </div>
+
+            {/* Reasoning Section */}
+            {factData.reasoning && (
+              <div className="bg-gray-50/50 border-2 border-gray-200 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Analysis Reasoning</h3>
+                <p className="text-gray-700 leading-relaxed">{factData.reasoning}</p>
+              </div>
+            )}
 
             {/* Sources Table */}
-            <div className="bg-gray-50/50 border-2 border-gray-200 rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 bg-white/70 border-b border-gray-200">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <ExternalLink className="text-blue-600" size={20} />
-                  Verified Sources ({factData.sources.length})
-                </h3>
-              </div>
-              <div className="overflow-x-auto max-h-96">
-                <table className="w-full text-sm">
-                  <thead className="bg-white/80 sticky top-0 z-10">
-                    <tr>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Source</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Domain</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Credibility</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Last Verified</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {factData.sources.map((source, index) => (
-                      <tr key={index} className="hover:bg-white/50 transition-colors">
-                        <td className="px-6 py-3 font-medium text-gray-900">{source.title}</td>
-                        <td className="px-6 py-3 text-blue-600 font-mono text-xs">{source.url}</td>
-                        <td className="px-6 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              source.credibility > 90 ? 'bg-green-500' : 
-                              source.credibility > 80 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}></div>
-                            <span className="font-semibold">{source.credibility}%</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-3 text-gray-600 text-xs">{source.verified}</td>
+            {factData.sources && factData.sources.length > 0 && (
+              <div className="bg-gray-50/50 border-2 border-gray-200 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 bg-white/70 border-b border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <ExternalLink className="text-blue-600" size={20} />
+                    Verified Sources ({factData.sources.length})
+                  </h3>
+                </div>
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/80 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-6 py-3 text-left font-semibold text-gray-700">Source</th>
+                        <th className="px-6 py-3 text-left font-semibold text-gray-700">Domain</th>
+                        <th className="px-6 py-3 text-left font-semibold text-gray-700">Credibility</th>
+                        <th className="px-6 py-3 text-left font-semibold text-gray-700">Last Verified</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {factData.sources.map((source, index) => (
+                        <tr key={index} className="hover:bg-white/50 transition-colors">
+                          <td className="px-6 py-3 font-medium text-gray-900">
+                            <a 
+                              href={source.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="hover:text-blue-600 transition-colors"
+                            >
+                              {source.title}
+                            </a>
+                          </td>
+                          <td className="px-6 py-3 text-blue-600 font-mono text-xs">
+                            {new URL(source.url).hostname}
+                          </td>
+                          <td className="px-6 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                source.credibility > 90 ? 'bg-green-500' : 
+                                source.credibility > 80 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}></div>
+                              <span className="font-semibold">{source.credibility}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-gray-600 text-xs">{source.verified}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-
-            {/* Recommendations */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6">
-              <h3 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
-                <TrendingUp className="text-blue-600" size={20} />
-                Verification Tips
-              </h3>
-              <ul className="space-y-2 text-sm text-blue-700">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Always verify breaking news with multiple independent sources
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Check publication dates and look for recent updates
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Cross-reference statistical claims with official data sources
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                  Be cautious of emotionally charged language and sensational headlines
-                </li>
-              </ul>
-            </div>
+            )}
 
             <div className="text-center">
               <p className="text-xs text-gray-500">

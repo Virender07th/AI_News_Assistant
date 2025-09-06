@@ -1,112 +1,105 @@
-from pydantic import BaseModel
-from typing import Literal
-
-
-
-
-# app/Service/AINewsProjectService/FactChecker.py
-
+import re
+import json
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
-from pydantic import BaseModel, HttpUrl
-from typing import List
-import os, json, re
+from pydantic import BaseModel
+from typing import Dict, List
 
 load_dotenv()
 
-# Load Groq LLaMA3 model
-llm = ChatGroq(model="llama3-70b-8192", temperature=0.2)
+# ----------------- Pydantic Models -----------------
+class BiasData(BaseModel):
+    overallScore: int
+    categories: Dict[str, int]
+    keyPhrases: List[str]
+    sentiment: str
+    confidence: int
+
+class BiasDetectionResponse(BaseModel):
+    biasData: BiasData
+    bias_progress: int
+    is_simulated: bool = False
+
+# ----------------- LangChain / LLM Setup -----------------
+llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.2)
 parser = StrOutputParser()
 
-# Define output structure
-class BiasDetectionReport(BaseModel):
-    bias_progress: int  # completion percentage, 0–100
-    bias_score: Literal["Low", "Moderate", "High" , "Postive" , "Negative" , "Neutral"]   # classified bias level
-    insights: str  # summary of insights about tone, language, framing
-    reasoning: str  # explanation of how the bias was detected
-    verdict: str  # final editorial verdict
-    cleaned_markdown: str
-    is_simulated: bool = True  # flag for demo mode vs real API
-
-
-
-# Prompt that forces JSON output
-
-
 bias_Detect_prompt = PromptTemplate.from_template(
-    """
-You are an expert AI assistant trained in journalistic standards, editorial analysis, and bias detection.
+"""
+You are an expert AI assistant in journalistic standards and bias detection.
 
-Your task is to analyze the following **news article** and return a structured **JSON report** summarizing bias-related insights. Focus on the tone, framing, fact selection, and language.
+Analyze the following article and return a **valid JSON object** compatible with this format:
 
----
+{{
+  "biasData": {{
+    "overallScore": int,
+    "categories": {{
+      "category_name_1": int,
+      "category_name_2": int,
+      "category_name_3": int,
+      "additional_categories_as_needed": int
+    }},
+    "keyPhrases": [string_array],
+    "sentiment": string,
+    "confidence": int
+  }},
+  "bias_progress": int
+}}
 
 ## Analysis Guidelines:
 
-1. **Tone**: Is the article neutral, emotional, optimistic, or pessimistic?
-2. **Framing**: Are both sides of the issue presented fairly, or is one side favored?
-3. **Fact Selection**: Are facts selectively presented to influence opinion?
-4. **Language**: Does the article use emotionally charged or persuasive language?
+1. **overallScore**: Overall bias score (0-100, where 0=no bias, 100=extremely biased)
 
----
+2. **categories**: Dynamically identify and score the most relevant bias categories found in this specific article. Common categories include but are not limited to:
+   - political: Political bias or partisan lean
+   - emotional: Emotional language and charged rhetoric  
+   - factual: Factual accuracy and evidence-based reporting (0-100, where 100=highly factual)
+   - sensational: Sensationalized or clickbait language
+   - commercial: Commercial or corporate bias
+   - cultural: Cultural or social bias
+   - geographical: Regional or national bias
+   - temporal: Temporal bias (focusing on recent vs historical context)
+   - source: Source selection bias
+   - confirmation: Confirmation bias (cherry-picking supporting evidence)
+   
+   **Important**: Only include categories that are actually relevant to the article content. Each category should be scored 0-100.
 
-## Classification Instructions:
+3. **keyPhrases**: Array of 3-6 key biased phrases, loaded language, or emotionally charged terms actually found in the article
 
-Use **only one** of the following values for `"bias_score"`:
-- `"Low"` – Largely neutral and fact-based
-- `"Moderate"` – Mildly biased or slanted
-- `"High"` – Strongly biased, emotionally or one-sided
-- `"Positive"` – Overly optimistic, uncritically supportive
-- `"Negative"` – Pessimistic or hostile toward a subject
-- `"Neutral"` – Fully factual, balanced and unbiased
+4. **sentiment**: Overall sentiment like "neutral", "slightly positive", "negative", "strongly positive", "slightly negative", "strongly negative"
 
----
+5. **confidence**: Your confidence in this analysis (0-100)
 
-## bias_progress Calculation:
+6. **bias_progress**: Same value as overallScore for compatibility
 
-- `"High"` / `"Negative"` → `100`
-- `"Moderate"` → `70`
-- `"Positive"` → `50`
-- `"Low"` / `"Neutral"` → `40`
+Focus on detecting:
+- Loaded or emotionally charged language
+- One-sided presentation of facts
+- Missing context or opposing viewpoints
+- Sensationalized headlines or claims
+- Political lean or agenda
+- Commercial interests
+- Cultural assumptions
+- Source credibility issues
 
----
+**Important**: Analyze the actual content and only identify bias categories that are genuinely present. Don't force categories that don't apply.
 
-## Output Instructions:
+Return ONLY the JSON object, no additional text or formatting.
 
-1. Rewrite the article in **Markdown** format using clean headings (`#`, `##`, `**`).
-2. Keep the summary under **600 words**.
-3. Return output as **valid JSON** using the format below.
-
----
-
-## Input Article:
+Article:
 {article}
-
----
-
-## Output Format:
-```json
-{{
-  "bias_progress": int (0 to 100),
-  "bias_score": "Low" | "Moderate" | "High" | "Positive" | "Negative" | "Neutral",
-  "insights": "Short summary of tone, bias or neutrality in the article",
-  "reasoning": "Explanation of why the bias_score was assigned, based on tone, framing, language, facts",
-  "verdict": "Final editorial judgment (e.g., Suitable for balanced reading, Biased but factual, etc.)",
-  "cleaned_markdown": "details Rewritten article in Markdown format",
-  "is_simulated": true
-}}
 """
 )
-# LangChain chain
+
 bias_detection_chain = bias_Detect_prompt | llm | parser
 
-# Function to process article
-def generate_bias_detection(article: str) -> BiasDetectionReport:
+# ----------------- LLM Processing -----------------
+def generate_bias_detection(article: str) -> BiasDetectionResponse:
     raw_output = bias_detection_chain.invoke({"article": article})
-
-    # Clean LLM output if it's wrapped in markdown-style code block
+    
+    # Extract JSON from ```json code block if present
     match = re.search(r"```json(.*?)```", raw_output, re.DOTALL)
     if match:
         json_str = match.group(1).strip()
@@ -115,6 +108,22 @@ def generate_bias_detection(article: str) -> BiasDetectionReport:
 
     try:
         data = json.loads(json_str)
-        return BiasDetectionReport(**data)
+        return BiasDetectionResponse(**data)
+    except json.JSONDecodeError as e:
+        print(f"JSON Parse Error: {e}")
+        print(f"Raw LLM Output: {raw_output}")
+        # Return a fallback response
+        return BiasDetectionResponse(
+            biasData=BiasData(
+                overallScore=50,
+                categories={"political": 40, "emotional": 45, "factual": 70},
+                keyPhrases=["analysis unavailable", "processing error"],
+                sentiment="neutral",
+                confidence=30
+            ),
+            bias_progress=50,
+            is_simulated=True
+        )
     except Exception as e:
-        raise ValueError(f"Invalid JSON from LLM: {e}")
+        print(f"General Error: {e}")
+        raise ValueError(f"Error processing bias detection: {e}")

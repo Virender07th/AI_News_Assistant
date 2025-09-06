@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 # Initialize Groq LLM with LLaMA3
-llm = ChatGroq(model="llama3-8b-8192", temperature=0.1)
+llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.1)
 parser = StrOutputParser()
 
 # Prompt template for article cleanup and formatting

@@ -1,69 +1,57 @@
 import React, { useState, useEffect } from "react";
-import { Globe, Clock, Send, CheckCircle, TrendingUp, Newspaper, Zap, Calendar } from "lucide-react";
+import {
+  Globe,
+  Clock,
+  Send,
+  CheckCircle,
+  TrendingUp,
+  Newspaper,
+  Zap,
+  Calendar,
+} from "lucide-react";
+import { fetchNews } from "../../../Service/Operations/AiOperation";
+import { useDispatch } from "react-redux";
 
-// Mock news data with enhanced properties
+// Enhanced mock news data with all required fields
 const mockNewsData = [
   {
-    id: 1,
-    title: "Neuralink Begins Human Trials with Brain Chip Implant",
-    description: "Elon Musk's Neuralink has initiated human trials of its brain-chip technology, enabling basic computer interaction using neural signals.",
-    summary: "Revolutionary brain-computer interface shows promising results in early human testing phase.",
+    id: "1",
+    heading: "Quantum Computing Breakthrough Promises Unbreakable Encryption",
+    description: "Researchers have developed a new quantum algorithm that could render current encryption methods obsolete, paving the way for a new era of secure communication.",
+    url: "https://example.com/quantum-breakthrough",
+    image: "https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=400&h=250&fit=crop&crop=center",
+    publisher: "TechCrunch",
+    publishedAt: "2025-09-06T08:30:00Z",
     tone: "Positive",
-    language: "English",
     category: "AI",
-    source: "TechCrunch",
-    publishedAt: "2 hours ago",
-    readTime: "3 min read"
+    source: "Tech Journal",
   },
   {
-    id: 2,
-    title: "Meta Sued Over Unauthorized Use of AI Training Data",
-    description: "Meta faces legal action for allegedly training its LLaMA models on copyrighted content without obtaining user consent.",
-    summary: "Legal challenges mount as AI companies face scrutiny over training data practices.",
+    id: "2",
+    heading: "Global Stock Markets Face Volatility Amid New Regulations",
+    description: "New international trade regulations have introduced significant uncertainty into the global stock markets, with analysts predicting a period of increased volatility.",
+    url: "https://example.com/market-volatility",
+    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=250&fit=crop&crop=center",
+    publisher: "Reuters",
+    publishedAt: "2025-09-06T07:45:00Z",
     tone: "Negative",
-    language: "English",
-    category: "Legal",
-    source: "Reuters",
-    publishedAt: "4 hours ago",
-    readTime: "2 min read"
-  },
-  {
-    id: 3,
-    title: "India Makes Historic Lunar Landing with Chandrayaan-3",
-    description: "India becomes the fourth nation to land on the Moon, with ISRO's Chandrayaan-3 touching down on the Moon's south pole.",
-    summary: "Historic achievement marks India's entry into elite group of lunar landing nations.",
-    tone: "Positive",
-    language: "Hindi",
-    category: "Space",
-    source: "Indian Express",
-    publishedAt: "6 hours ago",
-    readTime: "4 min read"
-  },
-  {
-    id: 4,
-    title: "OpenAI Unveils GPT-5 with Revolutionary Reasoning Capabilities",
-    description: "The latest AI model demonstrates unprecedented problem-solving abilities and multi-modal understanding across text, images, and code.",
-    summary: "Next-generation AI shows human-level reasoning in complex scenarios.",
-    tone: "Positive",
-    language: "English",
-    category: "AI",
-    source: "The Verge",
-    publishedAt: "1 hour ago",
-    readTime: "5 min read"
-  },
-  {
-    id: 5,
-    title: "Tesla Stock Soars After Record Q3 Deliveries",
-    description: "Electric vehicle giant Tesla reported its highest quarterly deliveries, beating analyst expectations and driving stock price up 15%.",
-    summary: "Strong delivery numbers boost investor confidence in Tesla's growth trajectory.",
-    tone: "Positive",
-    language: "English",
     category: "Business",
-    source: "Bloomberg",
-    publishedAt: "3 hours ago",
-    readTime: "3 min read"
-  }
+    source: "Financial Times",
+  },
+  {
+    id: "3",
+    heading: "NASA's Artemis Mission Successfully Launches Orion Spacecraft",
+    description: "The Orion spacecraft is now on its way to the Moon as part of the Artemis program, marking a major milestone in humanity's return to lunar exploration.",
+    url: "https://example.com/artemis-launch",
+    image: "https://images.unsplash.com/photo-1630514933924-7386765792e3?w=400&h=250&fit=crop&crop=center",
+    publisher: "Associated Press",
+    publishedAt: "2025-09-06T09:00:00Z",
+    tone: "Neutral",
+    category: "Space",
+    source: "NASA TV",
+  },
 ];
+
 
 const NewsFetchLayout = () => {
   const [topic, setTopic] = useState("");
@@ -73,7 +61,9 @@ const NewsFetchLayout = () => {
   const [progress, setProgress] = useState(0);
   const [fetchStage, setFetchStage] = useState("");
   const [newsData, setNewsData] = useState([]);
-  
+  const dispatch = useDispatch();
+  const token = localStorage.getItem("token");
+
   // WhatsApp scheduling states
   const [phoneNumber, setPhoneNumber] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
@@ -84,14 +74,14 @@ const NewsFetchLayout = () => {
   const [scheduleId, setScheduleId] = useState(null);
 
   const interests = [
-    { id: 'ai', label: 'AI & Technology', icon: '🤖' },
-    { id: 'space', label: 'Space & Science', icon: '🚀' },
-    { id: 'business', label: 'Business & Finance', icon: '💼' },
-    { id: 'health', label: 'Health & Medicine', icon: '🏥' },
-    { id: 'sports', label: 'Sports', icon: '⚽' },
-    { id: 'entertainment', label: 'Entertainment', icon: '🎬' },
-    { id: 'politics', label: 'Politics', icon: '🏛️' },
-    { id: 'climate', label: 'Climate & Environment', icon: '🌍' }
+    { id: "ai", label: "AI & Technology", icon: "🤖" },
+    { id: "space", label: "Space & Science", icon: "🚀" },
+    { id: "business", label: "Business & Finance", icon: "💼" },
+    { id: "health", label: "Health & Medicine", icon: "🏥" },
+    { id: "sports", label: "Sports", icon: "⚽" },
+    { id: "entertainment", label: "Entertainment", icon: "🎬" },
+    { id: "politics", label: "Politics", icon: "🏛️" },
+    { id: "climate", label: "Climate & Environment", icon: "🌍" },
   ];
 
   const fetchStages = [
@@ -100,41 +90,36 @@ const NewsFetchLayout = () => {
     "AI processing summaries...",
     "Categorizing articles...",
     "Filtering by quality...",
-    "Finalizing results..."
+    "Finalizing results...",
   ];
 
   useEffect(() => {
-    if (!done || !loading) return;
+    if (!loading) return;
 
     let currentStage = 0;
     const timer = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = prev + Math.random() * 15 + 5;
-        
-        if (currentStage < fetchStages.length && newProgress > (currentStage + 1) * 16) {
+        const newProgress = prev + Math.random() * 10 + 5;
+
+        if (
+          currentStage < fetchStages.length &&
+          newProgress > (currentStage + 1) * 16
+        ) {
           setFetchStage(fetchStages[currentStage]);
           currentStage++;
         }
 
         if (newProgress >= 100) {
           clearInterval(timer);
-          setLoading(false);
+          setProgress(100);
           setFetchStage("News fetch complete!");
-          
-          // Simulate filtered news based on topic
-          const filteredNews = topic.toLowerCase().includes('ai') 
-            ? mockNewsData.filter(item => item.category === 'AI')
-            : mockNewsData;
-          setNewsData(filteredNews);
-          
-          return 100;
         }
-        return newProgress;
+        return Math.min(newProgress, 100);
       });
-    }, 150);
+    }, 200);
 
     return () => clearInterval(timer);
-  }, [done, loading, topic]);
+  }, [loading, fetchStages]);
 
   const SubmitHandler = async (e) => {
     e.preventDefault();
@@ -142,39 +127,62 @@ const NewsFetchLayout = () => {
       setError("Please enter a topic or URL to fetch news");
       return;
     }
-    
+
     setError("");
-    setLoading(true);
-    setDone(true);
     setProgress(0);
     setFetchStage("Initializing news search...");
+    setLoading(true);
+    setDone(false);
     setNewsData([]);
+
+    try {
+    
+      
+      const payload = { topic, num_articles: 3 };
+      const result = await dispatch(fetchNews(payload, token));
+
+      if (result?.success) {
+        setNewsData(result.data);
+        
+      } 
+    } catch (err) {
+      console.error("Fetch News error:", err);
+      setError("Failed to fetch news. Please try again. Displaying mock data.");
+      setNewsData(mockNewsData);
+    } finally {
+      setLoading(false);
+      setDone(true);
+    }
   };
 
   const handleScheduleSetup = () => {
     if (!phoneNumber || !scheduledTime || selectedInterests.length === 0) {
-      setScheduleStatus("Please enter phone number, select time, and choose at least one interest");
+      setScheduleStatus(
+        "Please enter phone number, select time, and choose at least one interest"
+      );
       return;
     }
-    
+
     // Generate a unique schedule ID
     const newScheduleId = `schedule_${Date.now()}`;
     setScheduleId(newScheduleId);
     setEnableScheduling(true);
-    
-    const interestLabels = selectedInterests.map(id => 
-      interests.find(interest => interest.id === id)?.label
-    ).join(', ');
-    
-    setScheduleStatus(`✓ Daily news scheduled: ${articlesCount} articles about ${interestLabels} at ${scheduledTime} to ${phoneNumber}`);
-    
+
+    const interestLabels = selectedInterests
+      .map((id) => interests.find((interest) => interest.id === id)?.label)
+      .join(", ");
+
+    setScheduleStatus(
+      `✓ Daily news scheduled: ${articlesCount} articles about ${interestLabels} at ${scheduledTime} to ${phoneNumber}`
+    );
+
     // In a real implementation, you would set up the Twilio cron job here
     console.log("Setting up Twilio WhatsApp schedule:", {
       scheduleId: newScheduleId,
       phone: phoneNumber,
       time: scheduledTime,
       interests: selectedInterests,
-      articlesCount: articlesCount
+      articlesCount: articlesCount,
     });
   };
 
@@ -182,53 +190,63 @@ const NewsFetchLayout = () => {
     setEnableScheduling(false);
     setScheduleStatus("Schedule cancelled successfully");
     setScheduleId(null);
-    
+
     // In a real implementation, you would cancel the Twilio cron job here
     console.log("Cancelling Twilio WhatsApp schedule:", scheduleId);
-    
+
     // Clear status after 3 seconds
     setTimeout(() => setScheduleStatus(""), 3000);
   };
 
   const handleInterestToggle = (interestId) => {
-    setSelectedInterests(prev => 
-      prev.includes(interestId) 
-        ? prev.filter(id => id !== interestId)
+    setSelectedInterests((prev) =>
+      prev.includes(interestId)
+        ? prev.filter((id) => id !== interestId)
         : [...prev, interestId]
     );
   };
 
   const handleSendNow = () => {
     if (newsData.length === 0) return;
-    
+
     const articlesToSend = newsData.slice(0, articlesCount);
     console.log("Sending immediate WhatsApp message:", {
       phone: phoneNumber,
       articles: articlesToSend,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
-    setScheduleStatus(`✓ Sent ${articlesToSend.length} articles to ${phoneNumber} immediately`);
-    
+
+    setScheduleStatus(
+      `✓ Sent ${articlesToSend.length} articles to ${phoneNumber} immediately`
+    );
+
     // Clear status after 3 seconds
     setTimeout(() => setScheduleStatus(""), 3000);
   };
 
   const getToneColor = (tone) => {
     switch (tone?.toLowerCase()) {
-      case 'positive': return 'text-green-600 bg-green-50 border-green-200';
-      case 'negative': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-blue-600 bg-blue-50 border-blue-200';
+      case "positive":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "negative":
+        return "text-red-600 bg-red-50 border-red-200";
+      default:
+        return "text-blue-600 bg-blue-50 border-blue-200";
     }
   };
 
   const getCategoryIcon = (category) => {
     switch (category?.toLowerCase()) {
-      case 'ai': return <Zap className="w-4 h-4" />;
-      case 'space': return <Globe className="w-4 h-4" />;
-      case 'legal': return <CheckCircle className="w-4 h-4" />;
-      case 'business': return <TrendingUp className="w-4 h-4" />;
-      default: return <Newspaper className="w-4 h-4" />;
+      case "ai":
+        return <Zap className="w-4 h-4" />;
+      case "space":
+        return <Globe className="w-4 h-4" />;
+      case "legal":
+        return <CheckCircle className="w-4 h-4" />;
+      case "business":
+        return <TrendingUp className="w-4 h-4" />;
+      default:
+        return <Newspaper className="w-4 h-4" />;
     }
   };
 
@@ -241,17 +259,21 @@ const NewsFetchLayout = () => {
           AI-Powered News Fetcher
         </h1>
         <p className="mt-4 text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium">
-          Instantly fetch, analyze, and schedule AI-curated news from trusted sources. Set up automated WhatsApp delivery for daily updates.
+          Instantly fetch, analyze, and schedule AI-curated news from trusted
+          sources. Set up automated WhatsApp delivery for daily updates.
         </p>
-        
+
         {/* Feature highlights */}
         <div className="flex flex-wrap justify-center gap-6 mt-8">
           {[
             { icon: Newspaper, text: "AI Curation" },
             { icon: Send, text: "WhatsApp Delivery" },
-            { icon: Calendar, text: "Auto Scheduling" }
+            { icon: Calendar, text: "Auto Scheduling" },
           ].map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-gray-200">
+            <div
+              key={text}
+              className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-gray-200"
+            >
               <Icon size={16} className="text-blue-600" />
               <span className="text-sm font-medium text-gray-700">{text}</span>
             </div>
@@ -266,13 +288,17 @@ const NewsFetchLayout = () => {
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">News Search</h2>
-                <p className="text-gray-600">Enter topic or URL for AI-powered news fetching</p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  News Search
+                </h2>
+                <p className="text-gray-600">
+                  Enter topic or URL for AI-powered news fetching
+                </p>
               </div>
 
               <div className="space-y-4">
                 <label className="block text-sm font-semibold text-gray-700">
-                  Topic or Article URL
+                  Topic
                 </label>
                 <input
                   type="text"
@@ -317,7 +343,7 @@ const NewsFetchLayout = () => {
               <Send className="text-green-600" size={24} />
               WhatsApp Scheduling
             </h3>
-            
+
             <div className="space-y-6">
               {/* Phone Number */}
               <div>
@@ -332,7 +358,7 @@ const NewsFetchLayout = () => {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
-              
+
               {/* Time and Articles Count */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -375,8 +401,8 @@ const NewsFetchLayout = () => {
                       onClick={() => handleInterestToggle(interest.id)}
                       className={`p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                         selectedInterests.includes(interest.id)
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 bg-white/70 text-gray-600 hover:border-green-300 hover:bg-green-50/50'
+                          ? "border-green-500 bg-green-50 text-green-700"
+                          : "border-gray-200 bg-white/70 text-gray-600 hover:border-green-300 hover:bg-green-50/50"
                       }`}
                     >
                       <span>{interest.icon}</span>
@@ -391,7 +417,11 @@ const NewsFetchLayout = () => {
                 {!enableScheduling ? (
                   <button
                     onClick={handleScheduleSetup}
-                    disabled={!phoneNumber || !scheduledTime || selectedInterests.length === 0}
+                    disabled={
+                      !phoneNumber ||
+                      !scheduledTime ||
+                      selectedInterests.length === 0
+                    }
                     className="w-full px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <Clock size={18} />
@@ -420,11 +450,13 @@ const NewsFetchLayout = () => {
 
               {/* Status Display */}
               {scheduleStatus && (
-                <div className={`p-4 border rounded-xl ${
-                  scheduleStatus.includes('✓') 
-                    ? 'bg-green-50 border-green-200 text-green-700' 
-                    : 'bg-amber-50 border-amber-200 text-amber-700'
-                }`}>
+                <div
+                  className={`p-4 border rounded-xl ${
+                    scheduleStatus.includes("✓")
+                      ? "bg-green-50 border-green-200 text-green-700"
+                      : "bg-amber-50 border-amber-200 text-amber-700"
+                  }`}
+                >
                   <p className="text-sm font-medium">{scheduleStatus}</p>
                   {enableScheduling && (
                     <div className="mt-2 text-xs text-green-600">
@@ -446,9 +478,16 @@ const NewsFetchLayout = () => {
                     <p>📱 Phone: {phoneNumber}</p>
                     <p>⏰ Time: {scheduledTime} daily</p>
                     <p>📰 Articles: {articlesCount} per day</p>
-                    <p>🎯 Interests: {selectedInterests.map(id => 
-                      interests.find(interest => interest.id === id)?.icon
-                    ).join(' ')}</p>
+                    <p>
+                      🎯 Interests:{" "}
+                      {selectedInterests
+                        .map(
+                          (id) =>
+                            interests.find((interest) => interest.id === id)
+                              ?.icon
+                        )
+                        .join(" ")}
+                    </p>
                   </div>
                 </div>
               )}
@@ -457,12 +496,16 @@ const NewsFetchLayout = () => {
         </div>
 
         {/* Progress Section */}
-        {done && loading && (
+        {loading && (
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8 mb-8">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-700">Fetching News</span>
-                <span className="text-lg font-bold text-blue-600">{Math.round(progress)}%</span>
+                <span className="text-lg font-semibold text-gray-700">
+                  Fetching News
+                </span>
+                <span className="text-lg font-bold text-blue-600">
+                  {Math.round(progress)}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                 <div
@@ -478,58 +521,139 @@ const NewsFetchLayout = () => {
           </div>
         )}
 
-        {/* Results Section */}
-        {done && !loading && newsData.length > 0 && (
+        {/* Enhanced Results Section */}
+        {!loading && newsData.length > 0 && (
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">Latest News Results</h2>
-              <p className="text-gray-600">AI-curated articles matching your search</p>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                Latest News Results
+              </h2>
+              <p className="text-gray-600">
+                AI-curated articles matching your search
+              </p>
             </div>
 
             <div className="grid gap-6">
               {newsData.map((article) => (
-                <div key={article.id} className="bg-white/90 border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex-1 space-y-4">
-                      {/* Header */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="flex items-center gap-1 text-gray-600">
-                          {getCategoryIcon(article.category)}
-                          {article.category}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{article.source}</span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{article.publishedAt}</span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{article.readTime}</span>
-                      </div>
+                <div
+                  key={article.id}
+                  className="bg-white/90 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex flex-col lg:flex-row">
+                    {/* Image Section */}
+                    <div className="lg:w-80 h-48 lg:h-auto">
+                      <img
+                        src={article.image}
+                        alt={article.heading}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=250&fit=crop&crop=center";
+                        }}
+                      />
+                    </div>
 
-                      {/* Title */}
-                      <h3 className="text-xl font-bold text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors">
-                        {article.title}
+                    {/* Content Section */}
+                    <div className="flex-1 p-6 space-y-4">
+                      {/* Heading */}
+                      <h3 className="text-xl lg:text-2xl font-bold text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors">
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {article.heading}
+                        </a>
                       </h3>
 
                       {/* Description */}
-                      <p className="text-gray-700 leading-relaxed">{article.description}</p>
+                      <p className="text-gray-700 leading-relaxed text-sm lg:text-base">
+                        {article.description}
+                      </p>
 
-                      {/* AI Summary */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap size={14} className="text-blue-600" />
-                          <span className="text-xs font-semibold text-blue-800">AI Summary</span>
+                      {/* Article Metadata */}
+                      <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                Publisher:
+                              </span>
+                              <span className="text-gray-600">
+                                {article.publisher}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                Tone:
+                              </span>
+                              <span
+                                className={`px-2 py-1 text-xs font-semibold rounded-full border ${getToneColor(
+                                  article.tone
+                                )}`}
+                              >
+                                {article.tone}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                Source:
+                              </span>
+                              <span className="text-gray-600">
+                                {article.source}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                Category:
+                              </span>
+                              <span className="text-gray-600 flex items-center gap-1.5">
+                                {getCategoryIcon(article.category)}
+                                {article.category}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                Published At:
+                              </span>
+                              <span className="text-gray-600">
+                                {new Date(article.publishedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
+                                URL:
+                              </span>
+                              <a
+                                href={article.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline truncate max-w-48"
+                              >
+                                {article.url
+                                  .replace("https://", "")
+                                  .split("/")[0]}
+                              </a>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-blue-700">{article.summary}</p>
                       </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getToneColor(article.tone)}`}>
-                          {article.tone}
-                        </span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                          {article.language}
-                        </span>
+                      {/* Tags and Actions */}
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex gap-2">
+                          <a
+                            href={article.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-1"
+                          >
+                            <Globe size={14} />
+                            Read Full Article
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -546,29 +670,37 @@ const NewsFetchLayout = () => {
                 </h3>
                 <div className="space-y-3">
                   <p className="text-sm text-green-700">
-                    📱 Delivering {articlesCount} articles daily to <strong>{phoneNumber}</strong> at <strong>{scheduledTime}</strong>
+                    📱 Delivering {articlesCount} articles daily to{" "}
+                    <strong>{phoneNumber}</strong> at{" "}
+                    <strong>{scheduledTime}</strong>
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-green-600 font-medium">Interests:</span>
-                    {selectedInterests.map(id => {
-                      const interest = interests.find(i => i.id === id);
+                    <span className="text-xs text-green-600 font-medium">
+                      Interests:
+                    </span>
+                    {selectedInterests.map((id) => {
+                      const interest = interests.find((i) => i.id === id);
                       return (
-                        <span key={id} className="px-2 py-1 bg-white/70 border border-green-200 rounded-md text-xs font-medium text-green-700">
+                        <span
+                          key={id}
+                          className="px-2 py-1 bg-white/70 border border-green-200 rounded-md text-xs font-medium text-green-700"
+                        >
                           {interest?.icon} {interest?.label}
                         </span>
                       );
                     })}
                   </div>
                   <div className="flex gap-3 mt-4">
-                    <button 
+                    <button
                       onClick={handleSendNow}
                       disabled={newsData.length === 0}
                       className="px-4 py-2 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                     >
                       <Send size={16} />
-                      Send Now ({Math.min(articlesCount, newsData.length)} articles)
+                      Send Now ({Math.min(articlesCount, newsData.length)}{" "}
+                      articles)
                     </button>
-                    <button 
+                    <button
                       onClick={handleScheduleCancel}
                       className="px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-xl hover:bg-red-200 transition-colors flex items-center gap-2"
                     >
@@ -582,7 +714,8 @@ const NewsFetchLayout = () => {
 
             <div className="text-center mt-8">
               <p className="text-xs text-gray-500 mb-2">
-                News articles are AI-curated and analyzed. WhatsApp delivery powered by Twilio API for reliable daily updates.
+                News articles are AI-curated and analyzed. WhatsApp delivery
+                powered by Twilio API for reliable daily updates.
               </p>
               <div className="flex justify-center items-center gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
@@ -608,8 +741,12 @@ const NewsFetchLayout = () => {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Newspaper className="text-gray-400" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">No News Found</h3>
-            <p className="text-gray-600">Try a different topic or check your URL format</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              No News Found
+            </h3>
+            <p className="text-gray-600">
+              Try a different topic or check your URL format
+            </p>
           </div>
         )}
       </div>

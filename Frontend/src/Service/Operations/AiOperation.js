@@ -4,9 +4,7 @@ import { setLoading } from "../../Slice/authSlice";
 import toast from "react-hot-toast";
 
 const {
-  PARAGRAPH_SUMMARIZER_API,
-  BULLETS_SUMMARIZER_API,
-  HIGHLIGHT_SUMMARIZER_API,
+  SUMMARIZER_API,
   TRANSLATE_API,
   GENERATE_NEWS_ARTICLE_API,
   FETCH_NEWS_ARTICLES_API,
@@ -35,6 +33,8 @@ function createAIAction(endpoint, successMessage) {
         toast.dismiss(toastBar);
         toast.success(successMessage);
 
+        console.log(response.data);
+        
         return response.data;
       } catch (error) {
         toast.dismiss(toastBar);
@@ -52,20 +52,11 @@ function createAIAction(endpoint, successMessage) {
   };
 }
 
-export const paragraphSummarizer = createAIAction(
-  PARAGRAPH_SUMMARIZER_API,
+export const summarizer = createAIAction(
+  SUMMARIZER_API,
   "Paragraph summarization successful"
 );
 
-export const bulletPointSummarizer = createAIAction(
-  BULLETS_SUMMARIZER_API,
-  "Bullet-point summarization successful"
-);
-
-export const highlightSummarizer = createAIAction(
-  HIGHLIGHT_SUMMARIZER_API,
-  "Highlight summarization successful"
-);
 
 export const translate = createAIAction(
   TRANSLATE_API,
