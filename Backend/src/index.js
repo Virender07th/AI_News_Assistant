@@ -2,9 +2,13 @@ import "./Utils/dotenv.js"
 import express from "express";
 import connectDataBase from "./Config/database.js";
 import cloudinaryConnect from "./Config/cloudinary.js";
+import { initSchedules } from "./Controllers/TwillioController.js";
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import passport from "passport"; 
+import bodyParser from "body-parser";
+
 const app = express();
 
 // DataBase
@@ -12,9 +16,13 @@ connectDataBase();
 // Cloudinary
 cloudinaryConnect();
 
+
+initSchedules();
 //middlewares
 app.use(express.json());
+
 app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(cookieParser());
 // --- CORS CONFIG ---
 const allowedOrigins = [
@@ -55,6 +63,7 @@ import likeRoutes from "./Routes/LikeRoutes.js"
 import commentRoutes from "./Routes/CommentRoutes.js"
 import savedRoutes from "./Routes/SavedRoutes.js"
 import aiFeatures from "./Routes/AIRoutes.js"
+import twilioRoutes from "./Routes/TwilioRoutes.js"
 
 
 app.use('/api/v1/auth', userRoutes);
@@ -65,6 +74,7 @@ app.use('/api/v1/likes', likeRoutes);
 app.use('/api/v1/comments', commentRoutes);
 app.use('/api/v1/saved', savedRoutes);
 app.use("/api/v1/ai" , aiFeatures )
+app.use("/api/v1/whatsapp" , twilioRoutes )
 
 //def route
 app.get("/", (req, res) => {

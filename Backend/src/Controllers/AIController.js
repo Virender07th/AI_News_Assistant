@@ -3,7 +3,6 @@ import { AiEndpoints } from "../Utils/api.js";
 import Activity from "../Models/Activity.js";
 import UserStats from "../Models/UserStats.js";
 
-//
 // --- Helper: Record Activity + Update Stats ---
 //
 const recordActivityHelper = async ({ userId, title, type, status }) => {
@@ -127,6 +126,10 @@ const GenerateNewsArticle = async (req, res) => {
   await callFastAPI(AiEndpoints.NEWS_ARTICLE_GENERATE_API, req.body, res);
 };
 
+
+
+
+
 export {
   recordActivityHelper,
   FetchNewsArticles,
@@ -136,3 +139,4 @@ export {
   TranslateArticle,
   GenerateNewsArticle,
 };
+

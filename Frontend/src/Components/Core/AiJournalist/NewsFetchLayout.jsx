@@ -142,7 +142,7 @@ const NewsFetchLayout = () => {
       const result = await dispatch(fetchNews(payload, token));
 
       if (result?.success) {
-        setNewsData(result.data);
+        setNewsData(result.data.articles);
         
       } 
     } catch (err) {
@@ -543,7 +543,7 @@ const NewsFetchLayout = () => {
                     {/* Image Section */}
                     <div className="lg:w-80 h-48 lg:h-auto">
                       <img
-                        src={article.image}
+                        src={ `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}` || article.image}
                         alt={article.heading}
                         className="w-full h-full object-cover"
                         onError={(e) => {

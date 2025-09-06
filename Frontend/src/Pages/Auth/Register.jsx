@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, GraduationCap } from "lucide-react";
-import SignupForm from "./SignupForm";
+import SignupForm from "./SignupForm"
 import LoginForm from "./LoginForm";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";

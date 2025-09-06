@@ -53,3 +53,40 @@ export const otpTemplate = (otp) => `
 `;
 
 
+/**
+ * Formats an array of articles into a single string for a WhatsApp message.
+ *
+ * @param {Array<Object>} articles - An array of article objects. Each object
+ * should have `heading`, `url`, and an optional `description`.
+ * @returns {string} A formatted string ready for WhatsApp.
+ */
+export const whatsappMessageBody = (articles) => {
+  // 1. Handle invalid or empty input gracefully.
+  if (!Array.isArray(articles) || articles.length === 0) {
+    return "📰 No new articles today. Check back later!";
+  }
+
+  const header = "📰 Your AI-Curated News Update 📰";
+
+  // 2. Use `map` and `join` for cleaner, more functional code.
+  const articlesContent = articles
+    .map((article, index) => {
+      // 3. Use default values (??) and WhatsApp formatting (*bold*).
+      const heading = article.heading ?? 'No Title Available';
+      const description = article.description ?? '';
+      const url = article.url;
+
+      // 4. Create a smarter preview that only adds "..." if needed.
+      const preview = description.length > 120
+        ? `${description.slice(0, 120)}...`
+        : description;
+
+      // 5. Use template literals for clear, readable string construction.
+      return `${index + 1}. *${heading}*\n${preview}\n🔗 ${url}`;
+    })
+    .join('\n\n'); // Use a double newline to separate articles.
+
+  const footer = "✨ Powered by AI-curated insights. Stay informed via WhatsApp!";
+
+  return `${header}\n\n${articlesContent}\n\n${footer}`;
+};
