@@ -6,7 +6,7 @@ import { Autoplay } from "swiper/modules";
 import "swiper/css";
 
 import CardWithIcon from "./CardWithIcon";
-import CardwithImage from "./CardwithImage";
+import CardwithImage from "./CardWithImage";
 import Button from "../../Components/Resusable/Button";
 import {
   featuresData,
