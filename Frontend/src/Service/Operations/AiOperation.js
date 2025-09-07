@@ -21,7 +21,7 @@ function createAIAction(endpoint, successMessage) {
       try {
         const response = await apiConnector("POST", endpoint, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });

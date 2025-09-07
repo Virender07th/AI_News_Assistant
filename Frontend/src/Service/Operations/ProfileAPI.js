@@ -1,6 +1,6 @@
 import { apiConnector } from "../apiConnector";
 import { setUser, setLoading } from "../../Slice/profileSlice";
-import { profileEndpoints, dashboardEndpoints } from "../apis";
+import { profileEndpoints, dashboardEndpoints, savedEndpoints } from "../apis";
 import { logout } from "./AuthAPI";
 import toast from "react-hot-toast";
 import { setUserActivity, setUserStats } from "../../Slice/dashboardSlice";
@@ -13,6 +13,8 @@ const {
   DELETE_USER_PROFILE_API,
 } = profileEndpoints;
 const { GET_USER_ACTIVITY_API, GET_USER_STATS_API } = dashboardEndpoints;
+const { SAVE_NEWS_API, REMOVE_SAVED_NEWS_API, GET_ALL_SAVED_NEWS_API } =
+  savedEndpoints;
 
 export const fetchUserActivity = (token) => async (dispatch) => {
   dispatch(setLoading(true));
@@ -220,6 +222,7 @@ export function deleteProfile(token, navigate) {
 
       toast.success("Profile Deleted Successfully");
       dispatch(logout(navigate));
+      navigate("/");
     } catch (error) {
       console.error("Error deleting profile:", error);
       toast.error(error?.response?.data?.message || "Could not delete profile");
@@ -228,3 +231,31 @@ export function deleteProfile(token, navigate) {
     }
   };
 }
+
+
+
+
+export const saveNewsAPI = async (payload) => {
+  const token = localStorage.getItem("token");
+  const response = await apiConnector("POST", SAVE_NEWS_API, payload, { "Content-Type": "application/json", Authorization: `Bearer ${token}` });
+  return response.data;
+};
+
+export const removeSaveNewsAPI = async (newsId) => {
+  const token = localStorage.getItem("token");
+  const response = await apiConnector("DELETE", REMOVE_SAVED_NEWS_API.replace(":newsId", newsId), null, { Authorization: `Bearer ${token}` });
+  return response.data;
+};
+
+export const getSavedNewsAPI = async () => {
+  const token = localStorage.getItem("token");
+  const response = await apiConnector(
+    "GET",
+    GET_ALL_SAVED_NEWS_API,
+    null,
+    { Authorization: `Bearer ${token}` }
+  );
+  console.log("Saved News API Response:", response.data?.data);
+
+  return response.data?.data || [];  // ✅ return array
+};

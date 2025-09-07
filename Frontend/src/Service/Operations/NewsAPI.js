@@ -2,7 +2,7 @@ import { apiConnector } from "../apiConnector";
 import { setLoading } from "../../Slice/profileSlice";
 import { newsEndpoints } from "../apis";
 import toast from "react-hot-toast";
-import { setNewses, setNews } from "../../Slice/newsSlice";
+import { setNewses, setNews, setAllNews, setLatestNews } from "../../Slice/newsSlice";
 
 const {
   GET_TOP_HEADLINES_NEWS_API,
@@ -28,6 +28,7 @@ export const getTopHeadlines =
       if (!response.data.success) throw new Error(response.data.message);
 
       dispatch(setNewses(response.data.articles || []));
+      dispatch(setLatestNews(response.data.articles.length));
     } catch (err) {
       console.error("getTopHeadlines error:", err);
       toast.error(
@@ -91,6 +92,7 @@ export const getEverythings =
         "everything"
       );
       dispatch(setNewses(normalized));
+      dispatch(setAllNews(response.data.articles.length))
       console.log(normalized);
       
     } catch (err) {
@@ -149,6 +151,7 @@ export const getGoogleNews =
       // Normalize articles for frontend
       const normalized = normalizeNews(response.data.articles || [], "google");
       dispatch(setNewses(normalized));
+      dispatch(setAllNews(response.data.articles.length))
     } catch (err) {
       console.error("getGoogleNews error:", err);
       toast.error(

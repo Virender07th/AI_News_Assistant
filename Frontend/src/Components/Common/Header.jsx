@@ -18,12 +18,13 @@ export const headerData = [
   {
     items: [
       { label: "AI Journalist Agents", path: "/ai-journalist" },
-      { label: "AI News Anchor", path: "/news-anchor" },
+      // { label: "AI News Anchor", path: "/news-anchor" },
     ],
   },
   {
     items: [
       { label: "Profile", path: "/profile" },
+      { label: "Saved News", path: "/save-news" },
       { label: "Logout", path: "/logout" },
     ],
   },
@@ -194,7 +195,7 @@ const Header = () => {
 
       {/* Logout Confirmation Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex m-90 items-center justify-center z-[9999] bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 flex m-90 items-center justify-center z-[9999] ">
           <ConfirmationModal
             title="Are you sure you want to logout?"
             subtitle="You will be redirected to the home page."

@@ -282,10 +282,10 @@ const NewsFetchLayout = () => {
       </div>
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid lg:grid-cols-1 gap-8 mb-8">
           {/* Input Section */}
-          <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
+          <div className="bg-white/80    backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -338,14 +338,14 @@ const NewsFetchLayout = () => {
           </div>
 
           {/* WhatsApp Scheduling Section */}
-          <div className="bg-gradient-to-br from-white/90 to-gray-50/90 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
+          {/* <div className="bg-gradient-to-br from-white/90 to-gray-50/90 backdrop-blur-sm border border-gray-200/50 rounded-3xl shadow-xl p-8">
             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
               <Send className="text-green-600" size={24} />
               WhatsApp Scheduling
             </h3>
 
             <div className="space-y-6">
-              {/* Phone Number */}
+           
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number (with country code)
@@ -359,7 +359,7 @@ const NewsFetchLayout = () => {
                 />
               </div>
 
-              {/* Time and Articles Count */}
+         
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -389,7 +389,7 @@ const NewsFetchLayout = () => {
                 </div>
               </div>
 
-              {/* Interests Selection */}
+        
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Select Your Interests ({selectedInterests.length} selected)
@@ -412,7 +412,7 @@ const NewsFetchLayout = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+          
               <div className="space-y-3">
                 {!enableScheduling ? (
                   <button
@@ -448,7 +448,7 @@ const NewsFetchLayout = () => {
                 )}
               </div>
 
-              {/* Status Display */}
+        
               {scheduleStatus && (
                 <div
                   className={`p-4 border rounded-xl ${
@@ -467,7 +467,6 @@ const NewsFetchLayout = () => {
                 </div>
               )}
 
-              {/* Schedule Summary */}
               {enableScheduling && (
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4">
                   <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
@@ -492,7 +491,7 @@ const NewsFetchLayout = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Progress Section */}
@@ -585,6 +584,14 @@ const NewsFetchLayout = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-700">
+                                Published At:
+                              </span>
+                              <span className="text-gray-600">
+                                {new Date(article.publishedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-700">
                                 Tone:
                               </span>
                               <span
@@ -595,14 +602,7 @@ const NewsFetchLayout = () => {
                                 {article.tone}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-700">
-                                Source:
-                              </span>
-                              <span className="text-gray-600">
-                                {article.source}
-                              </span>
-                            </div>
+                            
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
@@ -614,14 +614,15 @@ const NewsFetchLayout = () => {
                                 {article.category}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            
+                            {/* <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-700">
-                                Published At:
+                                Source:
                               </span>
-                              <span className="text-gray-600">
-                                {new Date(article.publishedAt).toLocaleDateString()}
+                              <span className="text-gray-600  ">
+                                {article.source}
                               </span>
-                            </div>
+                            </div> */}
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-700">
                                 URL:

@@ -41,6 +41,7 @@ import FullNews from "./Components/Resusable/FullNews";
 import PrivateRoute from "./Components/Resusable/PrivateRoute";
 import CheckEmailPage from "./Pages/Auth/CheckEmail";
 import NewsVideoGenerator from "./Components/Core/AiJournalist/NewAnchor";
+import SavedNews from "./Components/Core/Settings/SavedNews";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -112,6 +113,7 @@ function App() {
           <Route path="translator" element={<Translator />} />
           <Route path="update-password" element={ <UpdatePassword />}/>
           <Route path="profile" element={<Profile />} />
+          <Route path="save-news" element={<SavedNews />} />
           <Route path="edit-profile" element={<UpdateProfile />} />
         </Route>
 

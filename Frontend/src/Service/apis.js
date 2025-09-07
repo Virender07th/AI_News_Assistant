@@ -26,13 +26,6 @@ export const dashboardEndpoints = {
   GET_USER_STATS_API: BASE_URL + "/dashboard/stats",
 };
 
-// ========== SEARCH ENDPOINTS ==========
-// export const searchEndpoints = {
-//   ADD_SEARCH_QUERY_API: BASE_URL + "/search/add-search",
-//   GET_SEARCH_HISTORY_BY_USER_ID_API: BASE_URL + "/search/all-search",
-//   CLEAR_SEARCH_HISTORY_API: BASE_URL + "/search/clear-search",
-// };
-
 // ========== SAVED NEWS ENDPOINTS ==========
 export const savedEndpoints = {
   SAVE_NEWS_API: BASE_URL + "/saved/save",
@@ -48,22 +41,22 @@ export const newsEndpoints = {
 };
 
 // ========== LIKES ENDPOINTS ==========
-export const likesEndpoints = {
-  LIKE_NEWS_API: BASE_URL + "/likes/like",
-  UNLIKE_NEWS_API: BASE_URL + "/likes/unlike/:newsId",
-  IS_NEWS_LIKED_API: BASE_URL + "/likes/:newsId",
-  GET_LIKED_NEWS_BY_USER_ID_API: BASE_URL + "/likes/likedbyUser",
-};
+// export const likesEndpoints = {
+//   LIKE_NEWS_API: BASE_URL + "/likes/like",
+//   UNLIKE_NEWS_API: BASE_URL + "/likes/unlike/:newsId",
+//   IS_NEWS_LIKED_API: BASE_URL + "/likes/:newsId",
+//   GET_LIKED_NEWS_BY_USER_ID_API: BASE_URL + "/likes/likedbyUser",
+// };
 
 // ========== COMMENTS ENDPOINTS ==========
-export const commentsEndpoints = {
-  ADD_COMMENT_NEWS_API: BASE_URL + "/comments/:newsId",
-  REPLY_TO_COMMENT_NEWS_API: BASE_URL + "/comments/reply/:parentCommentId",
-  UPDATE_COMMENT_API: BASE_URL + "/comments/:commentId",
-  DELETE_COMMENT_API: BASE_URL + "/comments/:commentId",
-  GET_ALL_COMMENTS_BY_USER_API: BASE_URL + "/comments/user",
-  GET_COMMENTS_BY_NEWS_ID_API: BASE_URL + "/comments/:newsId",
-};
+// export const commentsEndpoints = {
+//   ADD_COMMENT_NEWS_API: BASE_URL + "/comments/:newsId",
+//   REPLY_TO_COMMENT_NEWS_API: BASE_URL + "/comments/reply/:parentCommentId",
+//   UPDATE_COMMENT_API: BASE_URL + "/comments/:commentId",
+//   DELETE_COMMENT_API: BASE_URL + "/comments/:commentId",
+//   GET_ALL_COMMENTS_BY_USER_API: BASE_URL + "/comments/user",
+//   GET_COMMENTS_BY_NEWS_ID_API: BASE_URL + "/comments/:newsId",
+// };
 
 // ========== AI ENDPOINTS ==========
 export const AiEndpoints = {

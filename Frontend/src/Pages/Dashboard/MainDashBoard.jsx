@@ -16,10 +16,22 @@ import { fetchUserActivity } from "../../Service/Operations/ProfileAPI";
 //   { title: "Research",type:"Video", status:"Completed", date: "Generated on: 2024-07-21" },
 // ];
 
-const detailCard = [
+
+
+const MainDashboard = () => {
+  const dispatch = useDispatch();
+  const { activities = [] } = useSelector((state) => state.dashboard || {}); // fallback
+  const { totalNews , latestNews , allNews  , video } = useSelector((state) => state.news); // fallback
+  const { loading } = useSelector((state) => state.auth || {});
+  const token = localStorage.getItem("token");
+  const userName = useSelector((state) => state.profile?.user?.userName || "User");
+  // totalNews = lastestNews + allNews;
+
+  console.log("token" , token);
+ const detailCard = [
   { 
     title: "Total News Today", 
-    number: "1234", 
+    number: (latestNews || 0) + (allNews || 0), 
     icon: FileText,
     color: "from-blue-500 to-blue-600",
     bgColor: "bg-blue-50",
@@ -27,7 +39,7 @@ const detailCard = [
   },
   { 
     title: "Latest News", 
-    number: "5", 
+    number: latestNews || 0, 
     icon: TrendingUp,
     color: "from-green-500 to-green-600",
     bgColor: "bg-green-50",
@@ -35,7 +47,7 @@ const detailCard = [
   },
   { 
     title: "All News", 
-    number: "12", 
+    number: allNews || 0, 
     icon: Shield,
     color: "from-purple-500 to-purple-600",
     bgColor: "bg-purple-50",
@@ -43,39 +55,13 @@ const detailCard = [
   },
   { 
     title: "News Video Generation", 
-    number: "13", 
+    number: video || 0, 
     icon: Eye,
     color: "from-orange-500 to-orange-600",
     bgColor: "bg-orange-50",
     textColor: "text-orange-600"
   },
-  // { 
-  //   title: "Summary", 
-  //   number: "10", 
-  //   icon: Bot,
-  //   color: "from-indigo-500 to-indigo-600",
-  //   bgColor: "bg-indigo-50",
-  //   textColor: "text-indigo-600"
-  // },
-  // { 
-  //   title: "Multilingual Translator", 
-  //   number: "10", 
-  //   icon: Bot,
-  //   color: "from-indigo-500 to-indigo-600",
-  //   bgColor: "bg-indigo-50",
-  //   textColor: "text-indigo-600"
-  // },
 ];
-
-const MainDashboard = () => {
-  const dispatch = useDispatch();
-  const { activities = [] } = useSelector((state) => state.dashboard || {}); // fallback
-  const { loading } = useSelector((state) => state.auth || {});
-  const token = localStorage.getItem("token");
-  const userName = useSelector((state) => state.profile?.user?.userName || "User");
-
-  console.log("token" , token);
-  
 
   useEffect(() => {
     if (token) {

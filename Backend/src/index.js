@@ -59,8 +59,8 @@ import userRoutes from "./Routes/AuthRoutes.js"
 import profileRoutes from "./Routes/ProfileRoutes.js"
 import dashboardRoute from "./Routes/DashboardRoutes.js"
 import newsRoutes from "./Routes/NewsRoutes.js"
-import likeRoutes from "./Routes/LikeRoutes.js"
-import commentRoutes from "./Routes/CommentRoutes.js"
+// import likeRoutes from "./Routes/LikeRoutes.js"
+// import commentRoutes from "./Routes/CommentRoutes.js"
 import savedRoutes from "./Routes/SavedRoutes.js"
 import aiFeatures from "./Routes/AIRoutes.js"
 import twilioRoutes from "./Routes/TwilioRoutes.js"
@@ -70,8 +70,8 @@ app.use('/api/v1/auth', userRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/dashboard' , dashboardRoute)
 app.use('/api/v1/news', newsRoutes);
-app.use('/api/v1/likes', likeRoutes);
-app.use('/api/v1/comments', commentRoutes);
+// app.use('/api/v1/likes', likeRoutes);
+// app.use('/api/v1/comments', commentRoutes);
 app.use('/api/v1/saved', savedRoutes);
 app.use("/api/v1/ai" , aiFeatures )
 app.use("/api/v1/whatsapp" , twilioRoutes )

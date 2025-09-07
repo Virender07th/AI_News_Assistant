@@ -14,38 +14,73 @@ import {
   Shield,
   Globe,
   Heart,
-  Clock
+  Clock,
+  BadgeMinus 
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
 import toast from "react-hot-toast";
-import { getUserProfileDetaile } from "../../../Service/Operations/ProfileAPI";
+import { deleteProfile, getUserProfileDetaile } from "../../../Service/Operations/ProfileAPI";
+import { MdDangerous } from "react-icons/md";
+import ConfirmationModal from "../../Resusable/ConfirmationModal";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const dispatch =useDispatch();
+  const dispatch = useDispatch();
+  const [showModal, setShowModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const location = useLocation();
-  const { user , loading } = useSelector((state) => state.profile);
-  const [profileData, setProfileData] = useState(null);
+  const { user, loading } = useSelector((state) => state.profile);
   const { token } = useSelector((state) => state.auth);
 
-  const tokenFromStorage = token || localStorage.getItem("token")
+  // Get token from Redux or localStorage as fallback
+  const tokenFromStorage = token || localStorage.getItem("token");
+
   useEffect(() => {
-    if(tokenFromStorage) {
+    if (tokenFromStorage) {
       dispatch(getUserProfileDetaile(tokenFromStorage));
     }
-}, [dispatch , tokenFromStorage]);
+  }, [dispatch, tokenFromStorage]);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return 'Not available';
+    
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!tokenFromStorage) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteProfile());
+      toast.success("Account deleted successfully");
+      setShowModal(false);
+      // Optionally redirect to home or login page
+      navigate('/');
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Failed to delete account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getAuthProviderIcon = (provider) => {
-    switch (provider) {
+    switch (provider?.toLowerCase()) {
       case 'google':
         return <FcGoogle className="w-4 h-4" />;
       case 'facebook':
@@ -56,7 +91,7 @@ const Profile = () => {
   };
 
   const getAuthProviderLabel = (provider) => {
-    switch (provider) {
+    switch (provider?.toLowerCase()) {
       case 'google':
         return 'Google Account';
       case 'facebook':
@@ -66,10 +101,33 @@ const Profile = () => {
     }
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No user data state
+  if (!user && !loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-lg">
+          <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
+          <p className="text-gray-600 mb-4">Unable to load your profile information.</p>
+          <Button
+            content="Go to Home"
+            variant="primary"
+            size="md"
+            click={() => navigate('/')}
+          />
+        </div>
       </div>
     );
   }
@@ -96,6 +154,24 @@ const Profile = () => {
             </div>
           </div>
         </div>
+         {/* Delete Account Confirmation Modal - CORRECT IMPLEMENTATION */}
+     {/* Delete Account Confirmation Modal */}
+{showModal && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 -mt-100 min-h-screen">
+  <ConfirmationModal
+    title="Are you sure you want to Delete Account?"
+    subtitle="This action cannot be undone. Your account and all associated data will be permanently deleted."
+    btnContent1="Cancel"
+    btnContent2={isDeleting ? "Deleting..." : "Delete"}
+    onCancel={() => !isDeleting && setShowModal(false)}
+    onConfirm={handleDelete}
+    type="danger"
+    isLoading={isDeleting}
+    disabled={isDeleting}
+  />
+  </div>
+)}
+
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -108,14 +184,19 @@ const Profile = () => {
                 {user?.imageUrl || user?.profilePicture ? (
                   <img
                     src={user?.imageUrl || user?.profilePicture}
-                    alt="Profile"
+                    alt={`${user?.userName}'s profile`}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-16 h-16 md:w-20 md:h-20 text-gray-400" />
-                  </div>
-                )}
+                ) : null}
+                <div className="w-full h-full flex items-center justify-center" style={{
+                  display: (user?.imageUrl || user?.profilePicture) ? 'none' : 'flex'
+                }}>
+                  <User className="w-16 h-16 md:w-20 md:h-20 text-gray-400" />
+                </div>
               </div>
               
               {/* Verification Badge */}
@@ -130,15 +211,17 @@ const Profile = () => {
             <div className="flex-1 text-center md:text-left">
               <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {user?.userName}
+                  {user?.userName || 'Unknown User'}
                 </h2>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  user?.role === 'admin' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
-                </span>
+                {user?.role && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    user?.role === 'admin' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
+                  </span>
+                )}
               </div>
               
               <div className="flex items-center justify-center md:justify-start gap-2 text-gray-600 mb-3">
@@ -148,10 +231,12 @@ const Profile = () => {
                 </span>
               </div>
 
-              <p className="text-gray-600 mb-4 flex items-center justify-center md:justify-start gap-2">
-                <Mail className="w-4 h-4" />
-                {user?.email}
-              </p>
+              {user?.email && (
+                <p className="text-gray-600 mb-4 flex items-center justify-center md:justify-start gap-2">
+                  <Mail className="w-4 h-4" />
+                  {user?.email}
+                </p>
+              )}
 
               {user?.bio && (
                 <p className="text-gray-700 mb-4 max-w-md">
@@ -175,6 +260,14 @@ const Profile = () => {
                   variant="outline"
                   size="md"
                   click={() => navigate("/update-password")}
+                />
+                <Button
+                  content="Delete Account"
+                  icon={BadgeMinus}
+                  iconPosition="left"
+                  variant="outline"
+                  size="md"
+                  click={() => setShowModal(true)}
                 />
               </div>
             </div>
@@ -209,7 +302,7 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-1  flex items-center gap-1">
+                <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Phone className="w-4 h-4" />
                   Phone Number
                 </label>
@@ -219,7 +312,7 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-1  flex items-center gap-1">
+                <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
                   Location
                 </label>
@@ -239,7 +332,7 @@ const Profile = () => {
             
             <div className="space-y-6">
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-1  flex items-center gap-1">
+                <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
                   Member Since
                 </label>
@@ -254,7 +347,7 @@ const Profile = () => {
                   Last Login
                 </label>
                 <p className="text-gray-900 font-medium">
-                  {user?.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}
+                  {formatDate(user?.lastLoginAt)}
                 </p>
               </div>
 
@@ -297,6 +390,8 @@ const Profile = () => {
           )}
         </div>
       </div>
+
+     
     </div>
   );
 };

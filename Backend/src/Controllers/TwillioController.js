@@ -54,7 +54,6 @@ const fetchNewsArticlesDirect = async (payload) => {
 };
 
 // --- Helper: Send WhatsApp message ---
-// --- Helper: Send WhatsApp message ---
 const sendWhatsAppMessage = async (phone, payload) => {
   try {
     const articles = await fetchNewsArticlesDirect(payload);
@@ -85,7 +84,6 @@ const sendWhatsAppMessage = async (phone, payload) => {
 };
 
 
-// --- Create or Update Schedule ---
 // --- Create or Update Schedule ---
 const scheduleMessage = async (req, res) => {
   try {

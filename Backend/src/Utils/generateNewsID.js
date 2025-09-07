@@ -1,9 +1,9 @@
 import crypto from "crypto";
 
-const generateNewsId = (title, publishedAt , url) => {
+const generateNewsId = (title , url) => {
   return crypto
     .createHash("sha256")
-    .update(`${title.trim().toLowerCase()}${publishedAt}${url}`)
+    .update(`${title.trim().toLowerCase()}${url}`)
     .digest("hex");
 };
 
