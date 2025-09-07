@@ -33,7 +33,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:"http://localhost:8000/api/v1/auth/google/callback",
+      callbackURL:"https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -105,7 +105,7 @@ passport.use(
     {
       clientID: process.env.FB_APP_ID,
       clientSecret: process.env.FB_APP_SECRET,
-      callbackURL: "http://localhost:8000/api/v1/auth/facebook/callback",
+      callbackURL: "https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/facebook/callback",
       profileFields: ["id", "emails", "name", "picture.type(large)"],
     },
     async (accessToken, refreshToken, profile, done) => {

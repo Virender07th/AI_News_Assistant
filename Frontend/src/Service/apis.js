@@ -1,5 +1,6 @@
 // BASE URL (use HTTPS in production, HTTP for local dev)
-const BASE_URL = "http://localhost:8000/api/v1";
+// const BASE_URL = "http://localhost:8000/api/v1";
+const BASE_URL = "https://ai-news-assistant-1-laib.onrender.com/api/v1"
 
 
 // ========== AUTH ENDPOINTS ==========

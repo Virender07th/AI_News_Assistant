@@ -27,7 +27,7 @@ app.use(cookieParser());
 // --- CORS CONFIG ---
 const allowedOrigins = [
   "http://localhost:5173", // local dev
-  // "https://ai-all-docx-project.vercel.app" // Vercel frontend
+  "https://ai-news-assistant-1-laib.onrender.com" // Vercel frontend
 ];
 
 app.use(
