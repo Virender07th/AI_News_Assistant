@@ -1,38 +1,42 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# Ai-News-Project
-from app.Router.Summarize_router import router as summarize_route
-from app.Router.Translate_router import router as translate_route
-from app.Router.NewsArticleFetch_router import router as newsArticleFetch_router
-from app.Router.FactChecker_router import router as factChecker_router
-from app.Router.BiasDetection_router import router as bias_Detection_router
-from app.Router.FetchNews_router import router as fetchNews_router
 
+# AI News Project routers
+from app.Router.Summarize_router import router as summarize_router
+from app.Router.Translate_router import router as translate_router
+from app.Router.NewsArticleFetch_router import router as news_article_fetch_router
+from app.Router.FactChecker_router import router as fact_checker_router
+from app.Router.BiasDetection_router import router as bias_detection_router
+from app.Router.FetchNews_router import router as fetch_news_router
 
-
-
-#Ai-All-Docx-Project
-
+# Future: AI All Docx Project routers go here
 
 app = FastAPI()
 
+# ✅ Add all origins you need for dev + prod
+origins = [
+    "https://ai-news-assistant-2-7q8g.onrender.com",
+    "https://ai-journalist-agent.vercel.app",
+    "http://localhost:8000/api/v1",
+    "http://localhost:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-news-assistant-2-7q8g.onrender.com"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# AI NEWS 
-app.include_router(summarize_route, prefix="/api") 
-app.include_router(translate_route , prefix="/api")
-app.include_router(newsArticleFetch_router , prefix="/api" )
-app.include_router(factChecker_router , prefix="/api" )
-app.include_router(bias_Detection_router , prefix="/api" )
-app.include_router(fetchNews_router , prefix="/api" )
+# Include routers
+app.include_router(summarize_router, prefix="/api")
+app.include_router(translate_router, prefix="/api")
+app.include_router(news_article_fetch_router, prefix="/api")
+app.include_router(fact_checker_router, prefix="/api")
+app.include_router(bias_detection_router, prefix="/api")
+app.include_router(fetch_news_router, prefix="/api")
 
 @app.get("/")
 def read_root():
-    return {"message": "FastAPI is working"}
+    return {"message": "FastAPI is working 🚀"}
