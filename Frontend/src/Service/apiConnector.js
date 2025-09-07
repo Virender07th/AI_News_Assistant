@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // const BASE_URL = "http://localhost:8000/api/v1";
-const BASE_URL = "https://ai-news-assistant-1-laib.onrender.com/api/v1"
+const BASE_URL = "https://ai-news-assistant-2-7q8g.onrender.com/api/v1"
 
 
 export const axiosInstance = axios.create({

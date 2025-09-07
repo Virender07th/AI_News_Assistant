@@ -48,7 +48,7 @@ const Register = () => {
           {/* Social Login Buttons */}
           <div className="space-y-3">
             <a
-              href="https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/google"
+              href="https://ai-news-assistant-2-7q8g.onrender.com/api/v1/auth/google"
               className="w-full flex items-center justify-center gap-3 h-11 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 bg-white text-gray-700 font-medium text-sm shadow-sm"
             >
               <FcGoogle className="w-5 h-5" />
@@ -56,7 +56,7 @@ const Register = () => {
             </a>
 
             <a
-              href="https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/facebook"
+              href="https://ai-news-assistant-2-7q8g.onrender.com/api/v1/auth/facebook"
               className="w-full flex items-center justify-center gap-3 h-11 bg-[#1877F2] hover:bg-[#166FE5] rounded-xl transition-all duration-300 text-white font-medium text-sm shadow-md hover:shadow-lg"
             >
               <FaFacebook className="w-5 h-5" />

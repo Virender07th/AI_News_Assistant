@@ -33,7 +33,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:"https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/google/callback",
+      callbackURL:"https://ai-news-assistant-2-7q8g.onrender.com/api/v1/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -91,10 +91,10 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:5173/register", session: false }),
+  passport.authenticate("google", { failureRedirect: "https://ai-news-assistant.vercel.app/register", session: false }),
   (req, res) => {
     // ✅ redirect to frontend with JWT token
-    res.redirect(`http://localhost:5173/register?token=${req.user.token}`);
+    res.redirect(`https://ai-news-assistant.vercel.app/register?token=${req.user.token}`);
 
   }
 );
@@ -105,7 +105,7 @@ passport.use(
     {
       clientID: process.env.FB_APP_ID,
       clientSecret: process.env.FB_APP_SECRET,
-      callbackURL: "https://ai-news-assistant-1-laib.onrender.com/api/v1/auth/facebook/callback",
+      callbackURL: "https://ai-news-assistant-2-7q8g.onrender.com/api/v1/auth/facebook/callback",
       profileFields: ["id", "emails", "name", "picture.type(large)"],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -160,10 +160,10 @@ router.get("/facebook", passport.authenticate("facebook", { scope: ["email"], se
 
 router.get(
   "/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "http://localhost:5173/register", session: false }),
+  passport.authenticate("facebook", { failureRedirect: "https://ai-news-assistant.vercel.app/register", session: false }),
   (req, res) => {
     // redirect to frontend with JWT token like Google
-    res.redirect(`http://localhost:5173/register?token=${req.user.token}`);
+    res.redirect(`https://ai-news-assistant.vercel.app/register?token=${req.user.token}`);
   }
 );
 
