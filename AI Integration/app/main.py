@@ -18,7 +18,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://ai-news-assistant-2-7q8g.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
