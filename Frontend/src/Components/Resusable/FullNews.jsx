@@ -1,4 +1,4 @@
-// FullNews.jsx - Part 1: Imports and State Management
+// FullNews.jsx - Complete updated version with persistent AI tool sections
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { IoHeartOutline, IoChatbubbleOutline } from "react-icons/io5";
@@ -15,9 +15,12 @@ import {
   FileSearch,
   Bot,
   Sparkles,
+  CheckCircle,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   generateNewsArticle,
   fetchNews as fetchRelatedNews,
@@ -27,6 +30,7 @@ import {
   summarizer,
 } from "../../Service/Operations/AiOperation";
 import Button from "../Resusable/Button";
+import ReactMarkdown from 'react-markdown';
 
 const FullNews = () => {
   const { state } = useLocation();
@@ -34,15 +38,7 @@ const FullNews = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  // Get token from localStorage with error handling
-  const [token] = useState(() => {
-    try {
-      return localStorage.getItem("token");
-    } catch (error) {
-      console.error("Error accessing localStorage:", error);
-      return null;
-    }
-  });
+  const { token } = useSelector((state) => state.auth); 
 
   // Primary states
   const [news, setNews] = useState("");
@@ -51,21 +47,73 @@ const FullNews = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // AI Tool states
-  const [outputType, setOutputType] = useState("");
-  const [showOutput, setShowOutput] = useState(false);
-  const [done, setDone] = useState(false);
+  // AI Tool states - Updated for persistent sections
   const [aiResults, setAiResults] = useState({});
+  const [loadingTools, setLoadingTools] = useState({});
 
   // Translation states
   const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [showTranslateForm, setShowTranslateForm] = useState(false);
 
   // Summary states
   const [summaryFormat, setSummaryFormat] = useState("paragraph");
   const [showSummary, setShowSummary] = useState(false);
   const [summaryResults, setSummaryResults] = useState({});
 
-  // Language options - moved to useMemo for performance
+  // Helper function to get bias level styling
+  const getBiasLevel = useCallback((score) => {
+    if (score < 30) return { level: "Low", color: "green", bg: "bg-green-50", border: "border-green-200" };
+    if (score < 60) return { level: "Moderate", color: "yellow", bg: "bg-yellow-50", border: "border-yellow-200" };
+    return { level: "High", color: "red", bg: "bg-red-50", border: "border-red-200" };
+  }, []);
+
+  // Helper function to get fact check verdict styling
+  const getVerdictStyle = useCallback((verdict) => {
+    switch (verdict?.toUpperCase()) {
+      case "TRUE":
+        return { 
+          level: "TRUE", 
+          color: "green", 
+          bg: "bg-green-50", 
+          border: "border-green-200", 
+          icon: CheckCircle,
+          textColor: "text-green-800",
+          badgeColor: "bg-green-100"
+        };
+      case "MOSTLY TRUE":
+        return { 
+          level: "MOSTLY TRUE", 
+          color: "blue", 
+          bg: "bg-blue-50", 
+          border: "border-blue-200", 
+          icon: CheckCircle,
+          textColor: "text-blue-800",
+          badgeColor: "bg-blue-100"
+        };
+      case "MIXED":
+        return { 
+          level: "MIXED", 
+          color: "yellow", 
+          bg: "bg-yellow-50", 
+          border: "border-yellow-200", 
+          icon: AlertTriangle,
+          textColor: "text-yellow-800",
+          badgeColor: "bg-yellow-100"
+        };
+      default:
+        return { 
+          level: "FALSE", 
+          color: "red", 
+          bg: "bg-red-50", 
+          border: "border-red-200", 
+          icon: AlertTriangle,
+          textColor: "text-red-800",
+          badgeColor: "bg-red-100"
+        };
+    }
+  }, []);
+
+  // Language options
   const languageNames = useMemo(() => ({
     es: "Spanish",
     fr: "French",
@@ -89,24 +137,13 @@ const FullNews = () => {
     hu: "Hungarian",
   }), []);
 
-  // Tool configuration - moved to useMemo for performance
+  // Tool configuration
   const toolLabels = useMemo(() => ({
     fetchnews: { label: "Related News", icon: FileSearch, color: "blue" },
     factcheck: { label: "Fact Check", icon: Shield, color: "green" },
     biasDetect: { label: "Bias Detection", icon: Eye, color: "orange" },
     translate: { label: "Translate", icon: Globe, color: "purple" },
   }), []);
-
-  // Color classes mapping - fixed template literal issue
-  const getColorClasses = useCallback((color, isActive) => {
-    const colorMap = {
-      blue: isActive ? "bg-blue-600 border-blue-600 text-white" : "text-blue-500",
-      green: isActive ? "bg-green-600 border-green-600 text-white" : "text-green-500",
-      orange: isActive ? "bg-orange-600 border-orange-600 text-white" : "text-orange-500",
-      purple: isActive ? "bg-purple-600 border-purple-600 text-white" : "text-purple-500",
-    };
-    return colorMap[color] || colorMap.blue;
-  }, []);
 
   // Fetch news article content
   useEffect(() => {
@@ -128,11 +165,11 @@ const FullNews = () => {
         };
 
         const result = await dispatch(generateNewsArticle(payload, token));
-
-        if (result?.payload?.data?.news) {
-          setNews(result.payload.data.news);
-        } else if (result?.data?.news) {
+        
+        if (result?.data?.news) {
           setNews(result.data.news);
+        } else if (result?.payload?.data?.news) {
+          setNews(result.payload.data.news);
         } else {
           setError("No news content received");
         }
@@ -147,14 +184,19 @@ const FullNews = () => {
     fetchNewsContent();
   }, [dispatch, article?.url, article?.title, token]);
 
-  // Execute AI operations - improved with better error handling
+  // Execute AI operations - Updated for persistent sections
   const executeAIOperation = useCallback(async (type) => {
     if (!token) {
       setError("Authentication required");
       return;
     }
 
-    setLoading(true);
+    // Don't run if already have results for this tool
+    if (aiResults[type]) {
+      return;
+    }
+
+    setLoadingTools(prev => ({ ...prev, [type]: true }));
     setError("");
 
     try {
@@ -183,7 +225,6 @@ const FullNews = () => {
       if (result?.payload?.data || result?.data) {
         const data = result?.payload?.data || result?.data;
         setAiResults((prev) => ({ ...prev, [type]: data }));
-        setDone(true);
       } else {
         throw new Error("No data received from API");
       }
@@ -191,18 +232,17 @@ const FullNews = () => {
       console.error(`Error executing ${type}:`, error);
       setError(`Failed to execute ${type} operation. Please try again.`);
     } finally {
-      setLoading(false);
+      setLoadingTools(prev => ({ ...prev, [type]: false }));
     }
-  }, [dispatch, article, news, token]);
+  }, [dispatch, article, news, token, aiResults]);
 
-  // Handle summary generation - improved with caching
+  // Handle summary generation
   const generateSummary = useCallback(async (format) => {
     if (!token) {
       setError("Authentication required");
       return;
     }
 
-    // Check if summary already exists
     if (summaryResults[format]) {
       return;
     }
@@ -228,39 +268,18 @@ const FullNews = () => {
     }
   }, [token, article, news, dispatch, summaryResults]);
 
-// FullNews.jsx - Part 2: Event Handlers and Component
-
-  // Handle tool clicks - improved logic
+  // Handle tool clicks - Updated for persistent sections
   const handleToolClick = useCallback(async (type) => {
-    // Toggle off if same tool is clicked
-    if (outputType === type && showOutput) {
-      setShowOutput(false);
-      setOutputType("");
-      setError("");
+    if (type === "translate") {
+      setShowTranslateForm(!showTranslateForm);
       return;
     }
 
-    setOutputType(type);
-    setShowOutput(type !== "translate");
-    setLoading(false);
-    setDone(false);
-    setError("");
+    // Execute AI operation (will only run if no results exist)
+    await executeAIOperation(type);
+  }, [executeAIOperation, showTranslateForm]);
 
-    // Scroll to output for non-translate tools
-    if (type !== "translate") {
-      setTimeout(() => {
-        const outputElement = document.getElementById("output-box");
-        if (outputElement) {
-          outputElement.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
-
-      // Execute AI operation
-      await executeAIOperation(type);
-    }
-  }, [outputType, showOutput, executeAIOperation]);
-
-  // Handle translation - improved validation
+  // Handle translation
   const handleTranslate = useCallback(async (e) => {
     e.preventDefault();
 
@@ -274,9 +293,7 @@ const FullNews = () => {
       return;
     }
 
-    setLoading(true);
-    setDone(false);
-    setShowOutput(true);
+    setLoadingTools(prev => ({ ...prev, translate: true }));
     setError("");
 
     try {
@@ -288,17 +305,9 @@ const FullNews = () => {
 
       const result = await dispatch(translate(payload, token));
 
-      if (result?.payload?.data || result?.data) {
-        const data = result?.payload?.data || result?.data;
+      if (result?.data || result?.payload?.data) {
+        const data = result?.data || result?.payload?.data;
         setAiResults((prev) => ({ ...prev, translate: data }));
-        setDone(true);
-
-        setTimeout(() => {
-          const outputElement = document.getElementById("output-box");
-          if (outputElement) {
-            outputElement.scrollIntoView({ behavior: "smooth" });
-          }
-        }, 100);
       } else {
         throw new Error("No translation data received");
       }
@@ -306,11 +315,11 @@ const FullNews = () => {
       console.error("Translation error:", error);
       setError("Translation failed. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingTools(prev => ({ ...prev, translate: false }));
     }
   }, [selectedLanguage, token, article, news, dispatch]);
 
-  // Handle summary format change - improved
+  // Handle summary format change
   const handleSummaryFormat = useCallback(async (format) => {
     if (summaryFormat === format && showSummary) {
       setShowSummary(false);
@@ -319,169 +328,149 @@ const FullNews = () => {
 
     setSummaryFormat(format);
     setShowSummary(true);
-    setShowOutput(false);
 
     if (!summaryResults[format]) {
       await generateSummary(format);
     }
   }, [summaryFormat, showSummary, summaryResults, generateSummary]);
 
-  // Output components - memoized for performance
-  const outputComponents = useMemo(() => ({
-    fetchnews: aiResults.fetchnews && (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <FileSearch className="w-5 h-5 text-blue-500" />
-          Related News Stories
-        </h3>
-        <div className="space-y-3">
-          {aiResults.fetchnews.articles?.length > 0 ? (
-            aiResults.fetchnews.articles.map((item, i) => (
-              <div
-                key={i}
-                className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-              >
-                <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
-                <p className="text-sm text-gray-600">{item.description}</p>
-                {item.url && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 text-sm hover:underline"
+  // Helper functions for bias detection colors
+  const getIconColorClass = useCallback((color) => {
+    const colorClasses = {
+      green: 'text-green-600',
+      yellow: 'text-yellow-600', 
+      red: 'text-red-600'
+    };
+    return colorClasses[color] || 'text-gray-600';
+  }, []);
+
+  const getBadgeColorClasses = useCallback((color) => {
+    const badgeClasses = {
+      green: 'bg-green-100 text-green-800',
+      yellow: 'bg-yellow-100 text-yellow-800',
+      red: 'bg-red-100 text-red-800'
+    };
+    return badgeClasses[color] || 'bg-gray-100 text-gray-800';
+  }, []);
+
+  // Summary components
+  const summaryMap = useMemo(() => {
+    const getBulletPoints = (data) => {
+      if (!data) return [];
+      if (Array.isArray(data.summary)) return data.summary;
+      if (Array.isArray(data.bulletPoint)) return data.bulletPoint;
+      if (typeof data.summary === "string") {
+        return data.summary.split("\n").filter((point) => point.trim());
+      }
+      if (typeof data.bulletPoint === "string") {
+        return data.bulletPoint.split("\n").filter((point) => point.trim());
+      }
+      return [];
+    };
+
+    const getHighlights = (data) => {
+      if (!data) return [];
+      if (Array.isArray(data.summary)) return data.summary;
+      if (Array.isArray(data.keyHighlight)) return data.keyHighlight;
+      if (typeof data.keyHighlight === "string") {
+        return data.keyHighlight.split("\n").filter((point) => point.trim());
+      }
+      return [];
+    };
+
+    const getParagraphSummary = (data) => {
+      if (!data) return "";
+      return (
+        data.summary ||
+        data.result ||
+        data.paragraph?.summary ||
+        data.paragraph?.result ||
+        ""
+      );
+    };
+
+    const bullets = getBulletPoints(summaryResults?.bulletPoint);
+    const highlights = getHighlights(summaryResults?.keyHighlight);
+
+    return {
+      bulletPoint:
+        bullets.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-blue-500" />
+              Key Points
+            </h3>
+            <div className="space-y-2">
+              {summaryResults?.bulletPoint?.wordCount && (
+                <div className="text-sm text-gray-500 mb-3">
+                  {summaryResults.bulletPoint.wordCount} words •{" "}
+                  {summaryResults.bulletPoint.readingTime}
+                </div>
+              )}
+              <ul className="space-y-3">
+                {bullets.map((point, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 text-gray-700"
                   >
-                    Read more
-                  </a>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-600">No related news found.</p>
-          )}
-        </div>
-      </div>
-    ),
-
-    factcheck: aiResults.factcheck && (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-green-500" />
-          Fact Check Results
-        </h3>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-green-600" />
-            <span className="font-semibold text-green-800">
-              {aiResults.factcheck.status || "Verification Status"}
-            </span>
-          </div>
-          <p className="text-green-700">
-            {aiResults.factcheck.summary || aiResults.factcheck.result ||
-              "Fact check results will be displayed here..."}
-          </p>
-        </div>
-      </div>
-    ),
-
-    biasDetect: aiResults.biasDetect && (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Eye className="w-5 h-5 text-orange-500" />
-          Bias Analysis
-        </h3>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-orange-800">
-                Overall Bias Score
-              </span>
-              <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded text-sm">
-                {aiResults.biasDetect.score || "Analyzing..."}
-              </span>
+                    <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                    <span className="leading-relaxed">{point}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="text-orange-700 text-sm">
-              {aiResults.biasDetect.analysis || aiResults.biasDetect.result ||
-                "Bias analysis results will be displayed here..."}
+          </div>
+        ),
+
+      paragraph:
+        summaryResults?.paragraph && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <FileSearch className="w-4 h-4 text-green-500" />
+              Summary
+            </h3>
+            {summaryResults.paragraph?.wordCount && (
+              <div className="text-sm text-gray-500">
+                {summaryResults.paragraph.wordCount} words •{" "}
+                {summaryResults.paragraph.readingTime}
+              </div>
+            )}
+            <p className="text-gray-700 leading-relaxed">
+              {getParagraphSummary(summaryResults.paragraph)}
             </p>
           </div>
-        </div>
-      </div>
-    ),
+        ),
 
-    translate: done && aiResults.translate && (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Globe className="w-5 h-5 text-purple-500" />
-          Translated Content
-        </h3>
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <h4 className="font-medium text-purple-800 mb-2">
-            Output in {languageNames[selectedLanguage]}
-          </h4>
-          <p className="text-purple-700 whitespace-pre-wrap">
-            {aiResults.translate.translatedText || aiResults.translate.result ||
-              "Translation will appear here..."}
-          </p>
-        </div>
-      </div>
-    ),
-  }), [aiResults, done, languageNames, selectedLanguage]);
-
-  // Summary components - memoized for performance
-  const summaryMap = useMemo(() => ({
-    bulletPoint: summaryResults.bulletPoint && (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-500" />
-          Key Points
-        </h3>
-        <ul className="space-y-2 text-gray-700">
-          {summaryResults.bulletPoint.points?.map((point, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-              <span>{point}</span>
-            </li>
-          )) || (
-            <li className="flex items-start gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-              <span>
-                {summaryResults.bulletPoint.summary || summaryResults.bulletPoint.result ||
-                  "Key points will appear here..."}
-              </span>
-            </li>
-          )}
-        </ul>
-      </div>
-    ),
-
-    paragraph: summaryResults.paragraph && (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-          <FileSearch className="w-4 h-4 text-green-500" />
-          Summary
-        </h3>
-        <p className="text-gray-700 leading-relaxed">
-          {summaryResults.paragraph.summary || summaryResults.paragraph.result || 
-            "Summary will appear here..."}
-        </p>
-      </div>
-    ),
-
-    keyHighlight: summaryResults.keyHighlight && (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-          <Eye className="w-4 h-4 text-orange-500" />
-          Key Highlight
-        </h3>
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
-          <p className="text-orange-800 font-medium">
-            {summaryResults.keyHighlight.highlight || summaryResults.keyHighlight.result ||
-              "Key highlights will appear here..."}
-          </p>
-        </div>
-      </div>
-    ),
-  }), [summaryResults]);
+      keyHighlight:
+        highlights.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Eye className="w-4 h-4 text-orange-500" />
+              Key Highlights
+            </h3>
+            <div className="space-y-2">
+              {summaryResults?.keyHighlight?.wordCount && (
+                <div className="text-sm text-gray-500 mb-3">
+                  {summaryResults.keyHighlight.wordCount} words •{" "}
+                  {summaryResults.keyHighlight.readingTime}
+                </div>
+              )}
+              <ul className="space-y-3">
+                {highlights.map((point, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 text-gray-700"
+                  >
+                    <span className="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mt-2 flex-shrink-0"></span>
+                    <span className="leading-relaxed">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ),
+    };
+  }, [summaryResults]);
 
   // Early return for missing article
   if (!article.title && !article.heading) {
@@ -504,7 +493,7 @@ const FullNews = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-4xl mx-auto p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto p-6 lg:p-8 space-y-8">
         {/* Article Container */}
         <article className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/60 overflow-hidden">
           {/* Header Section */}
@@ -585,21 +574,19 @@ const FullNews = () => {
                   </a>
                 )}
               </div>
-
-             
             </div>
           </div>
         </article>
 
         {/* Error Display */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700 font-medium">{error}</p>
           </div>
         )}
 
         {/* Summary Section */}
-        <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Bot className="w-6 h-6 text-blue-500" />
@@ -637,7 +624,7 @@ const FullNews = () => {
         </div>
 
         {/* AI Tools Section */}
-        <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-purple-500" />
@@ -647,97 +634,362 @@ const FullNews = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {Object.entries(toolLabels).map(([key, config]) => {
                 const IconComponent = config.icon;
-                const isActive = outputType === key;
+                const hasResults = aiResults[key];
+                const isLoading = loadingTools[key];
 
                 return (
                   <button
                     key={key}
                     onClick={() => handleToolClick(key)}
-                    disabled={loading}
-                    className={`group p-4 rounded-xl border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      isActive 
-                        ? getColorClasses(config.color, true)
+                    disabled={isLoading}
+                    className={`group p-4 rounded-xl border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative ${
+                      hasResults
+                        ? `bg-${config.color}-50 border-${config.color}-300 text-${config.color}-700`
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
-                    }`}
+                    } ${key === "translate" && showTranslateForm ? `bg-${config.color}-100 border-${config.color}-400` : ""}`}
                   >
+                    {/* Results indicator */}
+                    {hasResults && (
+                      <div className={`absolute -top-2 -right-2 w-4 h-4 bg-${config.color}-500 rounded-full flex items-center justify-center`}>
+                        <CheckCircle className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    
                     <div className="flex flex-col items-center space-y-2">
                       <IconComponent
                         className={`w-6 h-6 ${
-                          isActive ? "text-white" : getColorClasses(config.color, false)
+                          hasResults ? `text-${config.color}-600` : `text-${config.color}-500`
                         }`}
                       />
                       <span className="text-sm font-medium">{config.label}</span>
+                      {isLoading && (
+                        <span className="text-xs text-gray-500">Loading...</span>
+                      )}
+                      {hasResults && !isLoading && (
+                        <span className="text-xs opacity-75">Completed</span>
+                      )}
                     </div>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          {/* Translation Form */}
-          {outputType === "translate" && (
-            <div className="mt-6 p-6 bg-purple-50 border border-purple-200 rounded-xl">
-              <form onSubmit={handleTranslate} className="space-y-4">
-                <label className="block text-sm font-semibold text-purple-800">
-                  Select Target Language
-                </label>
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full border border-purple-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  disabled={loading}
-                >
-                  <option value="">Choose language...</option>
-                  {Object.entries(languageNames).map(([code, name]) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  content={loading ? "Translating..." : "Translate Now"}
-                  condition={!loading && selectedLanguage}
-                  type="submit"
-                />
-              </form>
-            </div>
-          )}
-
-          {/* AI Output */}
-          {showOutput && (
-            <div
-              id="output-box"
-              className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-6 transition-all duration-300"
-            >
-              {loading ? (
-                <div className="flex justify-center items-center py-8 text-blue-600">
-                  <svg
-                    className="animate-spin h-6 w-6 mr-3"
-                    viewBox="0 0 24 24"
+            {/* Translation Form */}
+            {showTranslateForm && (
+              <div className="p-6 bg-purple-50 border border-purple-200 rounded-xl">
+                <form onSubmit={handleTranslate} className="space-y-4">
+                  <label className="block text-sm font-semibold text-purple-800">
+                    Select Target Language
+                  </label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="w-full border border-purple-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    disabled={loadingTools.translate}
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    />
-                  </svg>
-                  <span className="font-semibold">Generating output...</span>
-                </div>
-              ) : (
-                outputComponents[outputType]
-              )}
-            </div>
-          )}
+                    <option value="">Choose language...</option>
+                    {Object.entries(languageNames).map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    content={loadingTools.translate ? "Translating..." : "Translate Now"}
+                    condition={!loadingTools.translate && selectedLanguage}
+                    type="submit"
+                  />
+                </form>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* AI Tool Results Sections - Persistent sections for each tool */}
+        
+        {/* Related News Section */}
+        {aiResults.fetchnews && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <FileSearch className="w-6 h-6 text-blue-500" />
+                Related News Stories
+              </h3>
+              <div className="space-y-3">
+                {aiResults.fetchnews.articles?.length > 0 ? (
+                  aiResults.fetchnews.articles.map((item, i) => (
+                    <div
+                      key={i}
+                      className="p-4 bg-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      <h4 className="font-semibold text-blue-900 mb-2">{item.title}</h4>
+                      <p className="text-blue-700 text-sm mb-3">{item.description}</p>
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 text-sm hover:underline inline-flex items-center gap-1"
+                        >
+                          Read more
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-600">No related news found.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Fact Check Section */}
+        {aiResults.factcheck && (() => {
+          const factData = aiResults.factcheck;
+          const verdictStyle = getVerdictStyle(factData.verdict);
+          const VerdictIcon = verdictStyle.icon;
+
+          return (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+              <div className="space-y-6">
+                <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <Shield className="w-6 h-6 text-green-500" />
+                  Fact Check Results
+                </h3>
+                
+                {/* Overall Verdict */}
+                <div className={`${verdictStyle.bg} ${verdictStyle.border} border-2 rounded-2xl p-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <VerdictIcon className={`w-6 h-6 text-${verdictStyle.color}-600`} />
+                      Fact Check Verdict
+                    </h4>
+                    <span className={`px-4 py-2 ${verdictStyle.badgeColor} ${verdictStyle.textColor} font-bold rounded-full text-sm`}>
+                      {verdictStyle.level}
+                    </span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-gray-700 mb-4">
+                        The content is assessed as <strong>{factData.verdict?.toLowerCase() || 'under review'}</strong>
+                        {factData.overallScore && ` with a truth score of ${factData.overallScore}%`}. 
+                        {factData.confidence && ` Our analysis shows ${factData.confidence}% confidence in this assessment.`}
+                      </p>
+                      {factData.summary && (
+                        <p className="text-gray-700 mb-4">{factData.summary}</p>
+                      )}
+                      {factData.reasoning && (
+                        <p className="text-gray-700">{factData.reasoning}</p>
+                      )}
+                    </div>
+                    {factData.categories && (
+                      <div className="space-y-4">
+                        <div className="text-sm font-medium text-gray-600">Verification Breakdown:</div>
+                        {Object.entries(factData.categories).map(([category, score]) => (
+                          <div key={category} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="capitalize font-medium">{category} Accuracy</span>
+                              <span className="font-bold">{score}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full bg-gradient-to-r ${
+                                  score > 80 
+                                    ? 'from-green-400 to-green-500' 
+                                    : score > 60 
+                                      ? 'from-yellow-400 to-yellow-500'
+                                      : 'from-red-400 to-red-500'
+                                }`}
+                                style={{ width: `${score}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sources Table */}
+                {factData.sources && factData.sources.length > 0 && (
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 bg-white border-b border-gray-200">
+                      <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <ExternalLink className="text-blue-600" size={20} />
+                        Verified Sources ({factData.sources.length})
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto max-h-96">
+                      <table className="w-full text-sm">
+                        <thead className="bg-white sticky top-0 z-10">
+                          <tr>
+                            <th className="px-6 py-3 text-left font-semibold text-gray-700">Source</th>
+                            <th className="px-6 py-3 text-left font-semibold text-gray-700">Domain</th>
+                            <th className="px-6 py-3 text-left font-semibold text-gray-700">Credibility</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {factData.sources.map((source, index) => (
+                            <tr key={index} className="hover:bg-white/50 transition-colors">
+                              <td className="px-6 py-3 font-medium text-gray-900">
+                                <a 
+                                  href={source.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:text-blue-600 transition-colors"
+                                >
+                                  {source.title || source.url}
+                                </a>
+                              </td>
+                              <td className="px-6 py-3 text-blue-600 font-mono text-xs">
+                                {source.url ? new URL(source.url).hostname : 'N/A'}
+                              </td>
+                              <td className="px-6 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    (source.credibility || 75) > 90 ? 'bg-green-500' : 
+                                    (source.credibility || 75) > 80 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}></div>
+                                  <span className="font-semibold">{source.credibility || 75}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Bias Detection Section */}
+        {aiResults.biasDetect && (() => {
+          const biasData = aiResults.biasDetect.biasData || aiResults.biasDetect;
+          const overallScore = biasData.overallScore || 0;
+          const biasStyle = getBiasLevel(overallScore);
+
+          return (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+              <div className="space-y-6">
+                <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <Eye className="w-6 h-6 text-orange-500" />
+                  Bias Detection Analysis
+                </h3>
+                
+                {/* Overall Bias Score */}
+                <div className={`${biasStyle.bg} ${biasStyle.border} border-2 rounded-2xl p-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <Eye className={`w-6 h-6 ${getIconColorClass(biasStyle.color)}`} />
+                      Overall Bias Assessment
+                    </h4>
+                    <span className={`px-4 py-2 ${getBadgeColorClasses(biasStyle.color)} font-bold rounded-full text-sm`}>
+                      {biasStyle.level} ({overallScore}%)
+                    </span>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-gray-700 mb-4">
+                        The content shows <strong>{biasStyle.level.toLowerCase()}</strong> bias with an overall score of {overallScore}%. 
+                        {biasData.confidence && ` Analysis confidence: ${biasData.confidence}%`}
+                      </p>
+                      {biasData.sentiment && (
+                        <div className="mb-4">
+                          <span className="text-sm font-medium text-gray-600">Sentiment: </span>
+                          <span className={`font-semibold capitalize ${
+                            biasData.sentiment.includes('positive') ? 'text-green-600' :
+                            biasData.sentiment.includes('negative') ? 'text-red-600' :
+                            'text-yellow-600'
+                          }`}>
+                            {biasData.sentiment}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Bias Categories Breakdown */}
+                    {biasData.categories && (
+                      <div className="space-y-4">
+                        <div className="text-sm font-medium text-gray-600">Bias Category Analysis:</div>
+                        {Object.entries(biasData.categories).map(([category, score]) => (
+                          <div key={category} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="capitalize font-medium">{category} Bias</span>
+                              <span className="font-bold">{score}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full bg-gradient-to-r ${
+                                  score < 30 
+                                    ? 'from-green-400 to-green-500' 
+                                    : score < 60 
+                                      ? 'from-yellow-400 to-yellow-500'
+                                      : 'from-red-400 to-red-500'
+                                }`}
+                                style={{ width: `${score}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Key Biased Phrases */}
+                {biasData.keyPhrases && biasData.keyPhrases.length > 0 && (
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-6">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <AlertTriangle className="text-orange-600" size={20} />
+                      Potentially Biased Language ({biasData.keyPhrases.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {biasData.keyPhrases.map((phrase, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium border border-orange-200"
+                        >
+                          "{phrase}"
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-gray-600 text-sm mt-3">
+                      These phrases may indicate emotional or political bias in the content.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Translation Section */}
+        {aiResults.translate && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 lg:p-8">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <Globe className="w-6 h-6 text-purple-500" />
+                Translated Content
+              </h3>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <h4 className="font-semibold text-purple-800 mb-4">
+                  Output in {languageNames[selectedLanguage]}
+                </h4>
+                <div className="text-purple-700 prose max-w-none">
+                  <ReactMarkdown>
+                    {aiResults.translate.translatedText || aiResults.translate.result || "Translation will appear here..."}
+                  </ReactMarkdown> 
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

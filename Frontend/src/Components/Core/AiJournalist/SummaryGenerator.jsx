@@ -132,7 +132,7 @@ useEffect(() => {
     return (
       <div>
         <h3 className="text-lg font-semibold mb-3">
-          Here are 7 key factual bullet points from the news article:
+          Here are  factual bullet points from the news article:
         </h3>
         <ul className="space-y-3">
           {bullets.map((point, i) => (

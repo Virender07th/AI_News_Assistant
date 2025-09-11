@@ -20,7 +20,7 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
 import toast from "react-hot-toast";
-import { deleteProfile, getUserProfileDetaile } from "../../../Service/Operations/ProfileAPI";
+import { deleteProfile, getUserProfileDetails } from "../../../Service/Operations/ProfileAPI";
 import { MdDangerous } from "react-icons/md";
 import ConfirmationModal from "../../Resusable/ConfirmationModal";
 
@@ -39,7 +39,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (tokenFromStorage) {
-      dispatch(getUserProfileDetaile(tokenFromStorage));
+      dispatch(getUserProfileDetails(tokenFromStorage));
     }
   }, [dispatch, tokenFromStorage]);
 
@@ -244,7 +244,7 @@ const Profile = () => {
                 </p>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 ">
                 <Button
                   content="Edit Profile"
                   icon={Edit3}

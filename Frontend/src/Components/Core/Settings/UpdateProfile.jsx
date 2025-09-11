@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import {
-  getUserProfileDetaile,
+  getUserProfileDetails,
   updateDisplayPicture,
   updateProfile,
 } from "../../../Service/Operations/ProfileAPI";
@@ -124,7 +124,7 @@ const UpdateProfile = () => {
         formData.interests
       ) {
         await dispatch(updateProfile(token, formData));
-        await dispatch(getUserProfileDetaile(token));
+        await dispatch(getUserProfileDetails(token));
       }
 
       toast.success("Profile updated successfully!");

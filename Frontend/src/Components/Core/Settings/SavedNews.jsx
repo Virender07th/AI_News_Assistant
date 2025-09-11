@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Bookmark, ExternalLink, Trash2 } from "lucide-react";
 import Button from "../../Resusable/Button";
 import toast from "react-hot-toast";
 import {
   getSavedNewsAPI,
-  removeSaveNewsAPI,
+  removeSavedNewsAPI,
 } from "../../../Service/Operations/ProfileAPI";
 
 const SavedNews = ({ user }) => {
@@ -14,20 +14,29 @@ const SavedNews = ({ user }) => {
   const [showAllNews, setShowAllNews] = useState(false);
 
   const { token } = useSelector((state) => state.auth);
-  const tokenFromStorage = token || localStorage.getItem("token");
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (tokenFromStorage) fetchSavedNews();
-  }, [tokenFromStorage]);
+    if (token) {
+      fetchSavedNews();
+    }
+  }, [token]);
 
   const fetchSavedNews = async () => {
-    if (!tokenFromStorage) return;
+    if (!token) return;
+    
     setIsLoadingSavedNews(true);
     try {
-      const response = await getSavedNewsAPI();
+      // Use the Redux thunk pattern
+      const response = await dispatch(getSavedNewsAPI(token));
+      
       let newsData = [];
-      if (response?.data) newsData = response.data;
-      else if (Array.isArray(response)) newsData = response;
+      if (response?.data) {
+        newsData = response.data;
+      } else if (Array.isArray(response)) {
+        newsData = response;
+      }
+      
       setSavedNews(newsData);
     } catch (error) {
       console.error("Error fetching saved news:", error);
@@ -58,23 +67,28 @@ const SavedNews = ({ user }) => {
   };
 
   // Helper to get correct ID for deletion
-  const getNewsId = (savedItem) => savedItem.newsId?.newsId || null;
+  const getNewsId = (savedItem) => {
+    return savedItem.newsId?.newsId || savedItem._id || savedItem.id || null;
+  };
 
   const handleRemoveNews = async (savedItem) => {
     const newsId = getNewsId(savedItem);
-    console.log("newid", newsId);
+    console.log("News ID to remove:", newsId);
 
-    if (!tokenFromStorage || !newsId) return;
+    if (!token || !newsId) {
+      toast.error("Unable to remove news - missing token or ID");
+      return;
+    }
 
     try {
-      await removeSaveNewsAPI(newsId);
-      toast.success("News removed successfully");
-
+      // Use the Redux thunk pattern
+      await dispatch(removeSavedNewsAPI(token, newsId));
+      
       // Remove from local state
       setSavedNews((prev) => prev.filter((item) => getNewsId(item) !== newsId));
     } catch (error) {
       console.error("Error removing news:", error);
-      toast.error("Failed to remove news");
+      // Error handling is already done in the API function
     }
   };
 
@@ -157,6 +171,7 @@ const SavedNews = ({ user }) => {
                         <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                           <span>
                             {article.publisher ||
+                              article.source?.name ||
                               article.source ||
                               "Unknown Source"}
                           </span>
